@@ -1,0 +1,69 @@
+<title>붕어빵 타이쿤</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Do+Hyeon&display=swap">
+<link rel="stylesheet" href="style.css">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="px" x="0" y="0" width="1" height="1"><feFlood x="1" y="1" width="2" height="2"/><feComposite width="4" height="4"/><feTile result="a"/><feComposite in="SourceGraphic" in2="a" operator="in"/><feMorphology operator="dilate" radius="2"/></filter></svg>
+
+<div id="wrap"><div id="frame">
+  <div id="app">
+    <!-- scene: stall background, customers, cat -->
+    <div id="scene">
+      <div id="bgd" class="bg"></div><div id="bgn" class="bg night-bg"></div><div class="snowwrap"><div class="snow"></div></div>
+      <div id="props"></div>
+      <div class="snowback" aria-hidden="true"><i class="sf s1"></i><i class="sf s2"></i><i class="sf s3"></i></div>
+      <div id="custs"></div>
+      <button id="cat" hidden aria-label="cat"><img id="catchuru" src="assets/img/churu_side.webp" alt="" hidden><img id="catimg" alt=""></button>
+      <div id="churu" class="churupill" hidden><img src="assets/img/churu_1.webp" alt=""><b>0</b></div>
+    </div>
+    <!-- HUD -->
+    <div id="hud">
+      <div class="badge"><small>STAGE</small><b id="hstage">1</b></div>
+      <div class="goal"><div class="gbar"><i id="gfill"></i><span id="gtxt"></span><span id="gs1" class="gs" style="left:66.6%">★</span><span id="gs3" class="gs" style="left:97%">★</span></div></div>
+      <div id="clock"><svg viewBox="0 0 100 100"><circle class="rb" cx="50" cy="50" r="40"/><circle class="rf" cx="50" cy="50" r="40" pathLength="100"/></svg><span id="tico">☀️</span><b id="tnum">0</b></div>
+      <button id="hpause" aria-label="pause">❚❚</button>
+      <button id="hice" aria-label="ice time">❄️<b>0</b></button>
+      <button id="hbake" aria-label="instant bake">⚡<b>0</b></button>
+      <div class="cash"><img id="hcashimg" alt=""><b id="hcash"></b></div>
+      <div class="xpp"><i>Lv</i><b id="hlv">1</b><span class="xpbar"><i id="hxpf"></i></span></div>
+    </div>
+    <!-- counter with serving plates -->
+    <div id="counter"><div id="plates"></div><div id="mini" class="station"></div></div>
+    <!-- kitchen -->
+    <div id="kitchen">
+      <div id="grill"></div>
+      <div id="side"></div>
+      <div id="tubs"><div id="bats"></div><div id="milk" class="station"></div></div>
+    </div>
+    <div id="hint" hidden></div>
+    <div id="coach" hidden><div class="hole"></div><div class="cbub"><small></small><p></p><div class="crow"><button class="gbtn ghost sm" data-coach="skip">⏭</button><button class="gbtn" data-coach="next"></button></div></div></div>
+    <div id="finger" hidden>👆</div>
+    <!-- staircase map -->
+    <div id="map" hidden>
+      <div class="mtop"><b id="mtitle"></b><span class="cashpill"><img src="assets/img/sc_cashbox.webp" alt=""><b id="mcash"></b></span><button id="mxp" class="xppill"></button><button id="mset" aria-label="settings">⚙</button></div>
+      <button id="mevent" class="evbanner"></button>
+      <div id="mlive"></div>
+      <div class="scroll"><div id="stairs"></div></div>
+      <div id="mmode"><button data-live="rank" id="mrank"></button><button data-mode="easy"></button><button data-mode="hard"></button></div>
+      <div class="mbot"><button id="mshop" class="gbtn ghost"></button><button id="mprep" class="gbtn ghost"></button><button id="mstart" class="gbtn big"></button></div>
+    </div>
+    <div id="veil" hidden><div id="sheet"></div></div>
+    <div id="mg" hidden></div>
+    <div id="ad" hidden></div>
+    <div id="fuel"><i></i><b></b></div>
+    <div id="toast"></div>
+  </div>
+  <div id="keypad" hidden></div>
+</div></div>
+<script src="js/build.js"></script>
+<script src="js/data.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/i18n_more.js"></script>
+<script src="js/i18n_sea.js"></script>
+<script src="js/i18n_live.js"></script>
+<script src="js/i18n_tw.js"></script>
+<script src="js/fx.js"></script>
+<script src="js/bgm.js"></script>
+<script src="js/game.js"></script>
+<script src="js/live.js"></script>
+<script src="js/rank.js"></script>
+<script src="js/platform.js"></script>

@@ -1,0 +1,10 @@
+{
+  "appId": "com.ljh.bungeoppang",
+  "appName": "붕어빵 타이쿤",
+  "webDir": "www",
+  "backgroundColor": "#F2A33A",
+  "plugins": {
+    "SplashScreen": { "launchShowDuration": 1200, "backgroundColor": "#F2A33A", "showSpinner": false },
+    "StatusBar": { "overlaysWebView": true, "style": "DARK" }
+  }
+}
