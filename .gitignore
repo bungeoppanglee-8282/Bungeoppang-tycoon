@@ -7,3 +7,4 @@ app/android/local.properties
 app/android/app/google-services.json
 app/ios/App/Pods/
 *.keystore
+graphify-out/
