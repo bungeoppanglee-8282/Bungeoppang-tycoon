@@ -67,9 +67,14 @@ function nameSheet(){openSheet(`<div class="end"><div class="ribbon">🏮</div><
 const shopTitle=()=>S.shopName?`${S.shopName} ${t('nameSuffix')}`:t('title');
 
 // --- notifications: planned here, delivered by the app shell (Capacitor LocalNotifications); a browser tab cannot send them while closed ---
-const QUIET=[21*60+30,7*60+50], NOTIF_MAX_PER_DAY=2;    // * no sends 21:30-07:50, at most 2 a day
+//#quiet
+const WIN=[[480,530],[715,781],[1080,1350]], NOTIF_MAX_PER_DAY=2;    // * sends only 08:00-08:50, 11:55-13:00, 18:00-22:30 (same as the server), at most 2 a day
 function outOfQuiet(ts){const d=new Date(ts),m=d.getHours()*60+d.getMinutes();
-  if(m>=QUIET[0]){d.setDate(d.getDate()+1);d.setHours(7,50,0,0)}else if(m<QUIET[1])d.setHours(7,50,0,0);return d.getTime()}
+  if(WIN.some(([a,b])=>m>=a&&m<b))return ts;
+  const w=WIN.find(([a])=>a>m);                        // next window today, else the first one tomorrow
+  if(w)d.setHours(0,w[0],0,0);else{d.setDate(d.getDate()+1);d.setHours(0,WIN[0][0],0,0)}
+  return d.getTime()}
+//#end
 function buildNotifs(now=Date.now()){
   const on=P.notif||{},at=(days,h,mi)=>{const d=new Date(now);d.setDate(d.getDate()+days);d.setHours(h,mi,0,0);return d.getTime()},list=[];
   if(on.profit!==false){
@@ -114,7 +119,7 @@ function liveDraw(){
 }
 document.addEventListener('pointerdown',e=>{const b=e.target.closest('[data-live]');if(!b||b.disabled)return;const a=b.dataset.live;
   if(a==='rcok')receiptNext();else if(a==='rkyes'||a==='rkno'){if(a==='rkyes'){S.rankOn=true;toast(t('rkDone'));rkSync()}save();const f=rcNext;rcNext=null;closeSheet(true);f&&f()}
-  else if(a==='rkdel')rkDelete().then(()=>{toast(t('rkDelDone'));rankSheet(1)});else if(a==='rank')rankSheet();else if(a==='rankgo'){rankTab^=1;$('rktrack').style.transform=`translateX(${-rankTab*100}%)`}
+  else if(a==='rkdel')rkDelete().then(ok=>{toast(ok?t('rkDelDone'):t('rkDelFail'));ok&&rankSheet(1)});else if(a==='rank')rankSheet();else if(a==='rankgo'){rankTab^=1;$('rktrack').style.transform=`translateX(${-rankTab*100}%)`}
   else if(a==='att')attSheet();else if(a==='stamp')attStamp();else if(a==='gift')attClaim(b.dataset.k);
   else if(a==='spgo'){S.sp={day:today(),done:false};save();spMission()}
   else if(a==='spstart')startSpecial();
@@ -127,7 +132,7 @@ function spReturn(){const away=S.seen?Date.now()-S.seen:0;
 document.addEventListener('visibilitychange',()=>{if(document.hidden){S.seen=Date.now();save();planNotifs()}else{checkOrders();spReturn()}});
 checkOrders();liveDraw();
 // returning player: today's stamp is waiting
-if(!isNew)setTimeout(()=>{spReturn();if(S.top>=2&&!(S.att&&S.att.days[today()]&&!Object.keys(S.att.gifts||{}).length)&&$('veil').hidden&&!$('map').hidden)attSheet();S.seen=Date.now();save()},600);
+if(!isNew)setTimeout(()=>{if(!$('veil').hidden)return;spReturn();if(S.top>=2&&!(S.att&&S.att.days[today()]&&!Object.keys(S.att.gifts||{}).length)&&$('veil').hidden&&!$('map').hidden)attSheet();S.seen=Date.now();save()},600);
 
 // ---------- ranking ----------
 let rankTab=0;

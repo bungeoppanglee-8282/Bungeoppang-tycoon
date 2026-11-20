@@ -860,3 +860,8 @@ html[lang="ko"] body,html[lang="ko"] button,html[lang="ko"] input,html[lang="ko"
 .slot.gold,.slot.gold.ready{box-shadow:inset 0 2px 6px #000c,0 0 0 3px #ffd54a,0 0 22px #ffc400}
 .slot.gold .bi{animation:goldglow .7s ease-in-out infinite alternate}
 @keyframes goldglow{from{filter:drop-shadow(0 0 2px #fff7b8) drop-shadow(0 0 5px #ffc400) sepia(.35) saturate(1.6) brightness(1.05)}to{filter:drop-shadow(0 0 4px #fff) drop-shadow(0 0 12px #ffb300) drop-shadow(0 0 20px #ffd54a) sepia(.35) saturate(2) brightness(1.4)}}
+/* login gate (js/auth.js): one full-width button per provider; official brand buttons replace these when sign-in goes live */
+.authbtn{margin:6px 0}
+.authbtn.google{background:#fff;color:#3c4043;text-shadow:none;box-shadow:0 6px 0 #b9b9b9}
+.authbtn.kakao{background:#fee500;color:#191919;text-shadow:none;box-shadow:0 6px 0 #c9b400}
+.authbtn.naver{background:#03c75a;box-shadow:0 6px 0 #028a3e}

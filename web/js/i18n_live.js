@@ -261,3 +261,10 @@ Object.assign(L.es,{rkDel:'Borrar mis datos del ranking',rkDelDone:'Tus datos de
 Object.assign(L.vi,{rkDel:'Xóa dữ liệu của tôi khỏi bảng xếp hạng',rkDelDone:'Đã xóa dữ liệu xếp hạng của bạn'});
 Object.assign(L.th,{rkDel:'ลบข้อมูลของฉันออกจากอันดับ',rkDelDone:'ลบข้อมูลอันดับของคุณแล้ว'});
 Object.assign(L.id,{rkDel:'Hapus data saya dari peringkat',rkDelDone:'Data peringkat Anda telah dihapus'});
+
+// ---------- login gate strings (js/auth.js) + ranking delete failure; other languages fall back to English ----------
+Object.assign(L.ko,{authSub:'로그인하고 시작해요',authIn:n=>`${n}로 계속하기`,authGuest:'게스트로 시작',authSoon:'곧 지원돼요',authFail:'로그인에 실패했어요',guestAsk:'게스트로 시작할까요?',guestBody:'게스트 모드에서는 진행 기록이 저장되지 않아요. 계정에 보관되지 않아서 앱을 지우거나 기기를 바꾸면 사라져요.',authYes:'예',authNo:'아니오',rkDelFail:'삭제하지 못했어요. 인터넷을 확인하고 다시 눌러 주세요'});
+Object.assign(L.en,{authSub:'Sign in to start',authIn:n=>`Continue with ${n}`,authGuest:'Play as guest',authSoon:'Coming soon',authFail:'Sign-in failed',guestAsk:'Start as a guest?',guestBody:'In guest mode your progress is not saved to an account. It is lost if you delete the app or change devices.',authYes:'Yes',authNo:'No',rkDelFail:'Could not delete. Check your connection and tap again'});
+Object.assign(L.ja,{authSub:'ログインして始めよう',authIn:n=>`${n}で続ける`,authGuest:'ゲストで始める',authSoon:'近日対応予定です',authFail:'ログインに失敗しました',guestAsk:'ゲストで始めますか?',guestBody:'ゲストモードでは進行状況がアカウントに保存されません。アプリを削除したり機種変更すると消えます。',authYes:'はい',authNo:'いいえ',rkDelFail:'削除できませんでした。通信を確認してもう一度押してください'});
+Object.assign(L.zh,{authSub:'登录后开始',authIn:n=>`使用${n}继续`,authGuest:'以游客身份开始',authSoon:'即将支持',authFail:'登录失败',guestAsk:'要以游客身份开始吗?',guestBody:'游客模式下进度不会保存到账号。删除应用或更换设备后会丢失。',authYes:'是',authNo:'否',rkDelFail:'删除失败,请检查网络后再试'});
+Object.assign(L.es,{authSub:'Inicia sesión para empezar',authIn:n=>`Continuar con ${n}`,authGuest:'Jugar como invitado',authSoon:'Próximamente',authFail:'Error al iniciar sesión',guestAsk:'¿Empezar como invitado?',guestBody:'En modo invitado tu progreso no se guarda en una cuenta. Se pierde si borras la app o cambias de dispositivo.',authYes:'Sí',authNo:'No',rkDelFail:'No se pudo borrar. Revisa tu conexión e inténtalo de nuevo'});

@@ -28,7 +28,8 @@ const SUFFIX={ko:'붕어빵 가게',en:'Bungeoppang'};   // shortcut: ko/en only
 
 const kst=ms=>new Date(ms+9*3600e3);            // read the UTC fields of this to get Korean clock time
 const dayKey=ms=>kst(ms).toISOString().slice(0,10);
-function quiet(ms){const d=kst(ms),m=d.getUTCHours()*60+d.getUTCMinutes();return m>=21*60+30||m<7*60+50}
+const WINDOWS=[[480,530],[715,781],[1080,1350]];   // allowed KST minutes: 08:00-08:50, 11:55-13:00, 18:00-22:30
+function quiet(ms){const d=kst(ms),m=d.getUTCHours()*60+d.getUTCMinutes();return !WINDOWS.some(([a,b])=>m>=a&&m<b)}
 
 // who was passed: shops whose score is in [old, new), excluding the climber
 async function victims(f,oldV,newV,self){

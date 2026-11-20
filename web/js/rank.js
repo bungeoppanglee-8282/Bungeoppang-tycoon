@@ -5,7 +5,9 @@ const FS=`https://firestore.googleapis.com/v1/projects/${FB.pid}/databases/(defa
 const rkOn=()=>!!(window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform())||!!P.rkForce;
 let fbTok='',fbExp=0,RK=null;
 async function fbPost(url,body,h){const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json',...h},body:JSON.stringify(body)});if(!r.ok)throw new Error(r.status);return r.json()}
-async function fbAuth(){
+let fbP=null;
+const fbAuth=()=>fbP||(fbP=fbAuth0().finally(()=>fbP=null));   // concurrent callers share one sign-in (two sign-ups would orphan a score)
+async function fbAuth0(){
   if(fbTok&&Date.now()<fbExp)return fbTok;
   let d;const a=P.fb;
   if(a&&a.refresh)try{const x=await fbPost(`https://securetoken.googleapis.com/v1/token?key=${FB.key}`,{grant_type:'refresh_token',refresh_token:a.refresh});
@@ -32,8 +34,9 @@ async function rkSync(){
   }catch(e){}
 }
 async function rkDelete(){
-  try{const tk=await fbAuth(),H={Authorization:'Bearer '+tk};for(const c of ['shops','tokens'])await fetch(`${FS}/${c}/${P.fb.uid}`,{method:'DELETE',headers:H})}catch(e){}
-  S.rankOn=false;save();RK=null;
+  try{const tk=await fbAuth(),H={Authorization:'Bearer '+tk};for(const c of ['shops','tokens']){const r=await fetch(`${FS}/${c}/${P.fb.uid}`,{method:'DELETE',headers:H});if(!r.ok&&r.status!==404)throw new Error(r.status)}}
+  catch(e){return false}                              // offline / refused: keep rankOn so the player can retry; never say "deleted" when it was not
+  S.rankOn=false;save();RK=null;return true;
 }
 
 // --- push for "overtaken": this device's token is stored at tokens/{uid}; the Cloud Function reads it. App only, and only while ranking + ranking alerts are on ---

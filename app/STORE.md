@@ -19,7 +19,7 @@
 
 ## 1. 출시 전에 꼭 정해야 할 것
 
-- ☐ **앱 ID 바꾸기**: 지금은 임시값 `com.ljh.bungeoppang`이 들어 있습니다. 예를 들어 `com.juhee.bungeoppang`처럼 본인만 쓰는 이름으로 정하세요. **스토어에 한 번 올리면 영원히 바꿀 수 없습니다.**
+- ☐ **앱 ID 바꾸기**: 앱 ID는 `com.ljh.bungeoppang`으로 확정했고 3곳(아래 1~2번, iOS)에 이미 적용했습니다. **스토어에 한 번 올리면 영원히 바꿀 수 없으니 바꾸지 마세요.** (아래는 만약 바꿀 때만 참고)
   바꿀 파일:
   1. `app/capacitor.config.json`의 `appId`
   2. `app/android/app/build.gradle`의 `namespace`와 `applicationId`

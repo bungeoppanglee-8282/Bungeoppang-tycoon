@@ -879,5 +879,6 @@ function frame(now){const dt=Math.min(.1,(now-last)/1000);last=now;tick(dt);draw
 $('hcashimg').src=SC.cashbox;$('catimg').src=SC.cat_1;
 applySkin();applyLang();showMap();
 function introSheet(){toast(t('tOpen'));openSheet(`<div class="end"><img class="winimg" src="${bunDone('plain')}" alt=""><div class="ribbon">${t('title')}</div><p class="sub">${t('intro')}</p><p class="bonus">${t('tOpen')}</p><button class="gbtn big" data-start="1">${t('start')}</button></div>`)}
-if(isNew){save();setTimeout(()=>P.langChosen?nameSheet():openSheet(`<div class="end langpick"><div class="ribbon">🌐</div><p class="sub">${LANGS.map(([c])=>L[c].pickLang).join(' · ')}</p>${langSel()}<button class="gbtn big" data-act="langok">${t('ok')}</button></div>`,true),300)}
+if(isNew)save();
+setTimeout(()=>authGate(()=>{if(isNew)P.langChosen?nameSheet():openSheet(`<div class="end langpick"><div class="ribbon">🌐</div><p class="sub">${LANGS.map(([c])=>L[c].pickLang).join(' · ')}</p>${langSel()}<button class="gbtn big" data-act="langok">${t('ok')}</button></div>`,true)}),300);
 requestAnimationFrame(frame);
