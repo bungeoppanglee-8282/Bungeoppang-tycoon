@@ -52,6 +52,7 @@ dependencies {
     implementation project(':capacitor-android')
     implementation 'com.google.android.gms:play-services-ads:24.7.0'            // AdMob (interstitial + rewarded)
     implementation 'com.google.android.ump:user-messaging-platform:3.2.0'       // EEA/UK consent form
+    implementation 'com.android.billingclient:billing:8.0.0'                    // Google Play Billing (in-app items)
     testImplementation "junit:junit:$junitVersion"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"

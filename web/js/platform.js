@@ -4,7 +4,7 @@ let wake=null;
 function keepAwake(){if(window.Capacitor&&navigator.wakeLock)navigator.wakeLock.request('screen').then(w=>wake=w,()=>{})}
 function appHide(){save();paused=true}
 // never unpause under an open sheet (day summary, shop, tutorial own the pause then)
-function appShow(){if($('veil').hidden)paused=false;last=performance.now();keepAwake()}
+function appShow(){if($('veil').hidden)paused=false;last=performance.now();keepAwake();iapInit()}
 document.addEventListener('visibilitychange',()=>document.hidden?appHide():appShow());
 const CP=window.Capacitor&&window.Capacitor.Plugins;
 if(CP){

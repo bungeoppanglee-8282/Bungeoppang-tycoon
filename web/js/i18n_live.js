@@ -268,3 +268,10 @@ Object.assign(L.en,{authSub:'Sign in to start',authIn:n=>`Continue with ${n}`,au
 Object.assign(L.ja,{authSub:'ログインして始めよう',authIn:n=>`${n}で続ける`,authGuest:'ゲストで始める',authSoon:'近日対応予定です',authFail:'ログインに失敗しました',guestAsk:'ゲストで始めますか?',guestBody:'ゲストモードでは進行状況がアカウントに保存されません。アプリを削除したり機種変更すると消えます。',authYes:'はい',authNo:'いいえ',rkDelFail:'削除できませんでした。通信を確認してもう一度押してください'});
 Object.assign(L.zh,{authSub:'登录后开始',authIn:n=>`使用${n}继续`,authGuest:'以游客身份开始',authSoon:'即将支持',authFail:'登录失败',guestAsk:'要以游客身份开始吗?',guestBody:'游客模式下进度不会保存到账号。删除应用或更换设备后会丢失。',authYes:'是',authNo:'否',rkDelFail:'删除失败,请检查网络后再试'});
 Object.assign(L.es,{authSub:'Inicia sesión para empezar',authIn:n=>`Continuar con ${n}`,authGuest:'Jugar como invitado',authSoon:'Próximamente',authFail:'Error al iniciar sesión',guestAsk:'¿Empezar como invitado?',guestBody:'En modo invitado tu progreso no se guarda en una cuenta. Se pierde si borras la app o cambias de dispositivo.',authYes:'Sí',authNo:'No',rkDelFail:'No se pudo borrar. Revisa tu conexión e inténtalo de nuevo'});
+
+// ---------- purchase messages (js/iap.js); other languages fall back to English ----------
+Object.assign(L.ko,{iapPending:'결제 승인을 기다리는 중이에요. 승인되면 자동으로 지급돼요',iapFail:'결제하지 못했어요. 잠시 뒤 다시 시도해 주세요'});
+Object.assign(L.en,{iapPending:'Waiting for payment approval. It will be delivered automatically',iapFail:'Purchase failed. Please try again in a moment'});
+Object.assign(L.ja,{iapPending:'決済の承認待ちです。承認されると自動で付与されます',iapFail:'購入できませんでした。しばらくしてからもう一度お試しください'});
+Object.assign(L.zh,{iapPending:'正在等待付款确认,确认后会自动发放',iapFail:'购买失败,请稍后再试'});
+Object.assign(L.es,{iapPending:'Esperando la aprobación del pago. Se entregará automáticamente',iapFail:'No se pudo completar la compra. Inténtalo de nuevo más tarde'});

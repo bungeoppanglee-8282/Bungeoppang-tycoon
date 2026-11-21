@@ -97,3 +97,4 @@ const CUST_SPOTS=[100,265,455,620];
 const RANK_SAMPLE=[['황금붕어',9850],['팥부자',8720],['슈크림왕',7640],['바삭붕어',6980],['밤시장',6420],['반죽달인',5810],['노릇노릇',5390],['붕어공방',4950],['달콤팥',4520],['첫붕어',4180]], RANK_REV=450;
 // booster pack: month-long attendance gift, also sold in the shop. Price = unit prices (3,900/20, 2,900/3, 2,200/20) x 5 each = 6,358 -> 15% off = 5,404 -> 5,400
 const ATT_PACK={bake:5,ice:5,mini:5}, ATT_PACK_PRICE='₩5,400';
+const IAP_IDS=['noads','pat2','rack2','minibag','attpack','bake','ice'];   // Play Console in-app product ids: must match exactly (prices there; ₩ constants above are only the test-checkout labels)

@@ -280,8 +280,8 @@ function shopItems(){
     it.push({id:'cctv',ico:`<img src="${SC.icon_6}">`,name:t('cctv'),desc:t('cctvD'),cost:CCTV_COST,state:S.cctv?'own':''});
     it.push({id:'truck',ico:`<img src="${SC.icon_truck}">`,name:t('truck'),desc:t('truckD'),cost:TRUCK_COST,state:S.truck?'own':''});
   }
-  // real-money items stay hidden until Play Billing is wired: the mock checkout below would hand them out for free
-  return it.filter(i=>!i.real||iapMock());
+  // real-money items show only with a Play price (or in a test build): never offer something that cannot be paid for
+  return it.filter(i=>!i.real||IAP.price[i.id]||iapMock()).map(i=>IAP.price[i.id]?{...i,real:IAP.price[i.id]}:i);
 }
 const iapMock=()=>!!P.iapTest||/[?&]iaptest=1/.test(location.search);   // test builds only
 function shopSheet(){
@@ -298,8 +298,8 @@ function shopSheet(){
 }
 function buy(id){
   const it=shopItems().find(i=>i.id===id);if(!it||it.state)return;
-  // shortcut: mock checkout (test builds only, see iapMock); real builds need Play Billing here before any real-money item is shown
-  if(it.real){iapId=id;return openSheet(`<div class="pause"><div class="ribbon">${it.name}</div><p class="sub">${t('iapTest',it.real)}</p><div class="row3"><button class="gbtn ghost" data-act="iapno">${t('cancel')}</button><button class="gbtn iap" data-act="iapok">💎 ${it.real}</button></div></div>`)}
+  // real checkout is js/iap.js; the free mock sheet below is for test builds only (iapMock)
+  if(it.real){if(!iapMock())return iapBuy(id);iapId=id;return openSheet(`<div class="pause"><div class="ribbon">${it.name}</div><p class="sub">${t('iapTest',it.real)}</p><div class="row3"><button class="gbtn ghost" data-act="iapno">${t('cancel')}</button><button class="gbtn iap" data-act="iapok">💎 ${it.real}</button></div></div>`)}
   if(S.wallet<it.cost){toast(t('tCash'));return}
   S.wallet-=it.cost;
   if(id==='row')S.rows++;else if(id==='gas')S.gas++;else if(id==='plate')S.plates++;else if(id==='mini')S.mini=true;
@@ -712,7 +712,7 @@ function act(a){
   else if(a==='retry'){closeSheet(true);preStage(R.n)}
   else if(a==='next'){closeSheet(true);interAd(()=>S.adv?showMap():preStage(Math.min(S.top,R.n+1)))}
   else if(a==='fuelshop'){shopTab='store';shopSheet()}
-  else if(a==='iapok'){if(PERKS[iapId]){S[iapId]=true;toast(t('tBought'))}else if(iapId==='minibag'){S.minibag=(S.minibag||0)+MINIBAG_PACK;toast(t('miniBagGot',MINIBAG_PACK))}else if(iapId==='attpack'){S.bake=(S.bake||0)+ATT_PACK.bake;S.ice=(S.ice||0)+ATT_PACK.ice;S.minibag=(S.minibag||0)+ATT_PACK.mini;toast(t('attPackGot'))}else if(iapId==='bake'){S.bake=(S.bake||0)+BAKE_PACK;toast(t('bakeGot',BAKE_PACK))}else{S.ice=(S.ice||0)+ICE_PACK;toast(t('iceGot',ICE_PACK))}save();FX.on('buy');shopSheet()}
+  else if(a==='iapok'){iapGrant(iapId);save();FX.on('buy');shopSheet()}
   else if(a==='iapno')shopSheet();
   else if(a==='dbl'){if(R.dbl)return;showAd(()=>{if(R.dbl)return;R.dbl=true;S.wallet+=R.earned;save();
     const b=$('dbl');if(b){b.disabled=true;b.textContent=t('dblGot',money(R.earned))}const c=$('countup');if(c)countUp(c,R.earned*2);sfx('coin')})}
