@@ -54,6 +54,8 @@ exports.overtaken=onDocumentWritten({document:'shops/{uid}',region:'asia-northea
 const {onRequest}=require('firebase-functions/v2/https');
 const {defineSecret}=require('firebase-functions/params');
 const {makeOrder,confirmOrder}=require('./pay');
+const wallet=require('./wallet');
+const {GoogleAuth}=require('google-auth-library');
 const TOSS_KEY=defineSecret('TOSS_SECRET_KEY');
 const TOSS='https://api.tosspayments.com/v1/payments';
 async function toss(body){
@@ -63,7 +65,7 @@ async function toss(body){
   if(!r.ok)throw Object.assign(new Error(j.message||'toss error'),{status:502});
   return j;
 }
-const api=fn=>onRequest({region:'asia-northeast3',cors:true,secrets:[TOSS_KEY]},async(req,res)=>{
+const api=(fn,secrets=[])=>onRequest({region:'asia-northeast3',cors:true,secrets},async(req,res)=>{
   try{
     if(req.method!=='POST')return res.status(405).end();
     const m=/^Bearer (.+)$/.exec(req.get('Authorization')||'');if(!m)return res.status(401).json({error:'sign in first'});
@@ -71,6 +73,20 @@ const api=fn=>onRequest({region:'asia-northeast3',cors:true,secrets:[TOSS_KEY]},
     res.json(await fn(uid,req.body||{}));
   }catch(e){if(!e.status)console.error(e);res.status(e.status||500).json({error:e.status?e.message:'server error'})}
 });
-exports.payOrder=api((uid,b)=>makeOrder(db,uid,String(b.packId)));
-exports.payConfirm=api((uid,b)=>confirmOrder(db,toss,uid,{paymentKey:String(b.paymentKey),orderId:String(b.orderId),amount:b.amount}));
+exports.payOrder=api((uid,b)=>makeOrder(db,uid,String(b.packId)),[TOSS_KEY]);
+exports.payConfirm=api((uid,b)=>confirmOrder(db,toss,uid,{paymentKey:String(b.paymentKey),orderId:String(b.orderId),amount:b.amount}),[TOSS_KEY]);
+
+// ---- diamond wallet (wallet.js). Google Play purchases are checked with the Play Developer API as this function's own service account:
+// Play Console > Setup > API access: link this Cloud project and give that service account "View financial data"; enable the Google Play Android Developer API.
+const gauth=new GoogleAuth({scopes:['https://www.googleapis.com/auth/androidpublisher']});
+async function verifyPlay(productId,token){
+  const {token:at}=await (await gauth.getClient()).getAccessToken();
+  const r=await fetch(`https://androidpublisher.googleapis.com/androidpublisher/v3/applications/com.ljh.bungeoppang/purchases/products/${encodeURIComponent(productId)}/tokens/${encodeURIComponent(token)}`,{headers:{Authorization:'Bearer '+at}});
+  if(!r.ok)throw Object.assign(new Error('Google Play did not confirm this purchase'),{status:r.status===404||r.status===410?402:502});
+  return r.json();
+}
+exports.walletGet=api(uid=>wallet.balance(db,uid));
+exports.walletSpend=api((uid,b)=>wallet.spend(db,uid,{reqId:String(b.reqId),itemId:String(b.itemId)}));
+exports.walletPlay=api((uid,b)=>wallet.playCredit(db,verifyPlay,uid,{productId:String(b.productId),token:b.token}));
+exports.walletLog=api(uid=>wallet.history(db,uid));
 exports._t={quiet,dayKey};

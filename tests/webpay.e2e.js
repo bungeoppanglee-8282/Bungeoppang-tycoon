@@ -4,7 +4,7 @@ const URL='file://'+path.resolve(__dirname,'../web/index.html');
 const fakeToss=`window.TossPayments=()=>({widgets:()=>({setAmount:async()=>{},renderPaymentMethods:async()=>{},renderAgreement:async()=>{},requestPayment:async a=>{window.__req=a}})});TossPayments.ANONYMOUS='ANON';`;
 (async()=>{const b=await chromium.launch();
 // server: sign-in, order, confirm. confirm answers come from the `confirm` queue ([status, body]); the last one repeats
-const open=async(url,confirm=[[200,{gems:50}]],keep)=>{
+const open=async(url,confirm=[[200,{gems:50,balance:50}]],keep)=>{
   const ctx=keep||await b.newContext({viewport:{width:430,height:900}}),p=await ctx.newPage();p.seen=[];
   await p.route('**/accounts:signUp*',r=>r.fulfill({json:{idToken:'tok',refreshToken:'r',localId:'u1',expiresIn:'3600'}}));
   await p.route('**/payOrder',r=>{p.seen.push(['payOrder',r.request().headers().authorization,r.request().postData()]);r.fulfill({json:{orderId:'o1',amount:4900,gems:50,orderName:'다이아 50개'}})});
@@ -33,7 +33,7 @@ await p.context().close();
 ctx=await b.newContext({viewport:{width:430,height:900}});
 p=await open(URL+'?paymentKey=pk&orderId=o1&amount=4900',[[503,{error:'x'}]],ctx);await p.waitForTimeout(300);
 assert.ok(await ev(p,()=>!!S.payPend)&&(await ev(p,()=>S.gem||0))===0,'kept, not granted');
-await p.close();p=await open(URL,[[200,{gems:50}]],ctx);await p.waitForTimeout(400);
+await p.close();p=await open(URL,[[200,{gems:50,balance:50}]],ctx);await p.waitForTimeout(400);
 assert.strictEqual(await ev(p,()=>[S.gem,S.payPend]).then(x=>x.join()),'50,','delivered on the next start');await p.context().close();
 // 5. server refuses for good (403): dropped, nothing granted, no endless retry
 ctx=await b.newContext({viewport:{width:430,height:900}});

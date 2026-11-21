@@ -100,4 +100,5 @@ const ATT_PACK={bake:5,ice:5,mini:5};
 // Diamonds (💎) are the only thing sold for real money. List price 1 💎 = ₩100; discount per pack: 50 → 2%, 100 → 11%, 200 → 12.5%, 300 → 18%.
 // GEM_PACKS key = Play Console product id (must match exactly, type: consumable) -> [diamonds, label used only by the test checkout]. The real price comes from Play.
 const GEM_PACKS={gem50:[50,'₩4,900'],gem100:[100,'₩8,900'],gem200:[200,'₩17,500'],gem300:[300,'₩24,500']}, IAP_IDS=Object.keys(GEM_PACKS);
+const SERVER_API='https://asia-northeast3-my-bungeoppang-tycoon.cloudfunctions.net';   // our Cloud Functions (Seoul): wallet, web checkout
 const GEM_COST={minibag:20,attpack:50,bake:40,ice:30};   // diamond price of the booster packs (permanent items: see PERKS)

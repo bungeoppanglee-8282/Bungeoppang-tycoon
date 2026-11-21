@@ -290,3 +290,10 @@ Object.assign(L.ja,{gemAsk:(n,left)=>`ダイヤ${n}個を使って購入しま�
 Object.assign(L.zh,{gemAsk:(n,left)=>`要花费${n}颗钻石购买吗?购买后剩余钻石:${left}颗`,payNA:'此版本暂未开放钻石支付。可以在Google Play应用中充值'});
 Object.assign(L.es,{gemAsk:(n,left)=>`¿Gastar ${n} diamantes en esto? Diamantes restantes: ${left}`,payNA:'El pago de diamantes aún no está abierto en esta versión. Puedes recargar en la app de Google Play'});
 Object.assign(L.ko,{payGo:'결제하기'});Object.assign(L.en,{payGo:'Pay'});Object.assign(L.ja,{payGo:'決済する'});Object.assign(L.zh,{payGo:'支付'});Object.assign(L.es,{payGo:'Pagar'});
+
+// ---------- wallet: history, offline, paid-but-not-delivered ----------
+Object.assign(L.ko,{netErr:'인터넷에 연결되어 있어야 해요. 연결 후 다시 눌러 주세요',payLater:'결제는 완료됐어요! 인터넷에 연결되면 다이아가 자동으로 들어와요',gemLogT:'다이아 내역',gemLogNone:'아직 내역이 없어요',srcPlay:'구글 플레이',srcWeb:'웹 결제'});
+Object.assign(L.en,{netErr:'You need an internet connection. Connect and tap again',payLater:'Payment done! Your diamonds will arrive automatically once you are online',gemLogT:'Diamond history',gemLogNone:'No history yet',srcPlay:'Google Play',srcWeb:'Web payment'});
+Object.assign(L.ja,{netErr:'インターネット接続が必要です。接続してからもう一度押してください',payLater:'決済は完了しました!オンラインになるとダイヤが自動で届きます',gemLogT:'ダイヤの履歴',gemLogNone:'履歴はまだありません',srcPlay:'Google Play',srcWeb:'ウェブ決済'});
+Object.assign(L.zh,{netErr:'需要联网。请联网后再点一次',payLater:'支付已完成!联网后钻石会自动到账',gemLogT:'钻石记录',gemLogNone:'暂无记录',srcPlay:'Google Play',srcWeb:'网页支付'});
+Object.assign(L.es,{netErr:'Necesitas conexión a internet. Conéctate y vuelve a pulsar',payLater:'¡Pago completado! Tus diamantes llegarán automáticamente cuando tengas conexión',gemLogT:'Historial de diamantes',gemLogNone:'Aún no hay historial',srcPlay:'Google Play',srcWeb:'Pago web'});

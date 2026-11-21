@@ -289,7 +289,7 @@ function shopSheet(){
   const tabs=['kitchen','batter','drink','deco','store','xp'];
   const tn={kitchen:'tabKitchen',batter:'tabBatter',drink:'tabDrink',deco:'tabDeco',store:'tabStore',xp:'tabXp'};
   openSheet(`<div class="shop"><button class="xbtn" data-act="close" aria-label="close">✕</button>
-    <div class="shophead"><div class="ribbon">${t('shop')}</div><span class="cashpill"><img src="${SC.cashbox}" alt="">${money(S.wallet)}</span><span class="cashpill gempill"><img src="${IMGP}gem_1.webp" alt="">${S.gem||0}</span></div>
+    <div class="shophead"><div class="ribbon">${t('shop')}</div><span class="cashpill"><img src="${SC.cashbox}" alt="">${money(S.wallet)}</span><span class="cashpill gempill"><img src="${IMGP}gem_1.webp" alt="">${S.gem||0}<button class="loglink" data-act="gemlog" aria-label="${t('gemLogT')}">📜</button></span></div>
     <div class="tabs">${tabs.map(x=>`<button class="tab${x===shopTab?' on':''}" data-tab="${x}">${t(tn[x])}</button>`).join('')}</div>
     ${shopTab==='xp'?`<div class="xptab">${xpBody()}</div>`:''}<div class="items${shopTab==='deco'||shopTab==='store'?' cards':''}">${(shopTab==='xp'?[]:shopItems()).map(i=>`<div class="item ${i.state}"><div class="iico">${i.ico}</div><div class="itx"><b>${i.name}</b><small>${i.desc}</small></div>
       ${i.state==='max'?`<span class="tag ok">✓ ${t('max')}</span>`:i.state==='own'?`<span class="tag ok">✓ ${t('owned')}</span>`:i.state==='ship'?`<span class="tag ship">${i.id[0]==='d'?'🚚':'🔬'} ${i.need}</span>`:i.state==='lock'?`<span class="tag">🔒 ${i.need}</span>`:
@@ -716,7 +716,7 @@ function act(a){
   else if(a==='fuelshop'){shopTab='store';shopSheet()}
   else if(a==='iapok'){iapGrant(iapId);save();FX.on('buy');shopSheet()}
   else if(a==='iapno')shopSheet();
-  else if(a==='gemok')gemSpend();else if(a==='gemno')shopSheet();
+  else if(a==='gemlog')gemLog();else if(a==='gemok')gemSpend();else if(a==='gemno')shopSheet();
   else if(a==='dbl'){if(R.dbl)return;showAd(()=>{if(R.dbl)return;R.dbl=true;S.wallet+=R.earned;save();
     const b=$('dbl');if(b){b.disabled=true;b.textContent=t('dblGot',money(R.earned))}const c=$('countup');if(c)countUp(c,R.earned*2);sfx('coin')})}
   else if(a==='cont'){showAd(()=>{R.contUsed=true;R.dur+=30;R.ended=false;R.running=true;closeSheet(true)})}
