@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>플로우 라이트</title>
+<style>
+:root{--bg:#f8fafc;--card:#fff;--fg:#0f172a;--mute:#64748b;--line:#e2e8f0;--acc:#4f46e5}
+*{box-sizing:border-box}body{margin:0;font:15px/1.5 system-ui,sans-serif;background:var(--bg);color:var(--fg)}
+header{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 16px;background:var(--card);border-bottom:1px solid var(--line)}
+header nav{display:flex;flex-wrap:wrap;gap:4px;flex:1}header a{white-space:nowrap;color:var(--fg);text-decoration:none;padding:4px 10px;border-radius:6px}
+header a[aria-current]{background:#eef2ff;color:var(--acc);font-weight:600}
+main{max-width:960px;margin:0 auto;padding:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.num{font-size:26px;font-weight:700}.mute{color:var(--mute);font-size:13px}
+.kanban{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+.col{background:#f1f5f9;border-radius:8px;padding:8px;min-height:60px}
+.item{display:block;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:8px;margin:6px 0;color:inherit;text-decoration:none}
+.chip{display:inline-block;padding:1px 8px;border-radius:99px;color:#fff;font-size:12px}
+.done{text-decoration:line-through;color:var(--mute)}.late{color:#dc2626;font-weight:600}
+table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:6px;border-bottom:1px solid var(--line)}
+form{display:flex;flex-wrap:wrap;gap:8px;align-items:end}label{display:flex;flex-direction:column;font-size:13px;color:var(--mute);gap:2px}
+input,select,textarea,button{font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--fg)}
+textarea{width:100%;min-height:70px}button{cursor:pointer}button.primary{background:var(--acc);color:#fff;border-color:var(--acc)}
+button.danger{color:#dc2626}:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+</style></head><body>
+<header><nav id="nav" aria-label="메뉴"></nav>
+  <label>나<select id="me" aria-label="현재 사용자"></select></label>
+  <button id="exp">백업 내보내기</button><label for="imp" class="mute" style="cursor:pointer">가져오기<input id="imp" type="file" accept=".json,application/json" hidden></label>
+</header>
+<main id="app"></main>
+<script src="store.js"></script>
+<script>
+let db = load(localStorage);
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const today = () => new Date().toLocaleDateString('sv'); // 로컬 기준 YYYY-MM-DD
+const st = id => STATUSES.find(s => s.id === id) || STATUSES[0];
+const chip = id => `<span class="chip" style="background:${st(id).color}">${st(id).name}</span>`;
+const people = () => [...new Set(db.projects.flatMap(p => p.members))];
+function commit() {
+  try { save(localStorage, db); } catch (e) { alert('저장 실패(저장 공간 부족 등): ' + e.message); }
+  render();
+}
+function taskLine(t) {
+  const late = t.status !== 'done' && t.due && t.due < today();
+  return `<a class="item" href="#/t/${t.id}">${chip(t.status)} <span class="${t.status === 'done' ? 'done' : ''}">${esc(t.title)}</span>
+    <div class="mute">${t.kind === 'task' ? '업무' : t.kind === 'todo' ? '할일' : '글'} · ${esc(t.assignee || '미지정')}
+    ${t.due ? `· <span class="${late ? 'late' : ''}">~${t.due}</span>` : ''}</div></a>`;
+}
+
+function viewDashboard() {
+  const rows = dashboard(db.tasks, today()), sum = k => Object.values(rows).reduce((a, r) => a + r[k], 0);
+  const tasks = db.tasks.filter(t => t.kind === 'task');
+  return `<div class="grid">${[['진행 중', 'open'], ['지연', 'overdue'], ['이번 주 마감', 'thisWeek'], ['완료', 'done']]
+      .map(([l, k]) => `<div class="card"><div class="mute">${l}</div><div class="num ${k === 'overdue' && sum(k) ? 'late' : ''}">${sum(k)}</div></div>`).join('')}</div>
+    <div class="card"><h2>담당자별</h2><table><tr><th>담당자</th><th>진행 중</th><th>지연</th><th>이번 주</th><th>완료</th></tr>
+      ${Object.entries(rows).map(([n, r]) => `<tr><td>${esc(n)}</td><td>${r.open}</td><td class="${r.overdue ? 'late' : ''}">${r.overdue}</td><td>${r.thisWeek}</td><td>${r.done}</td></tr>`).join('') || '<tr><td colspan="5" class="mute">업무가 없습니다</td></tr>'}</table></div>
+    <div class="kanban">${STATUSES.map(s => `<div class="col"><b>${s.name}</b> <span class="mute">${tasks.filter(t => t.status === s.id).length}</span>
+      ${tasks.filter(t => t.status === s.id).map(taskLine).join('')}</div>`).join('')}</div>
+    <div class="card"><h2>새 프로젝트</h2><form id="newp"><label>이름<input name="name" required maxlength="100"></label>
+      <label>멤버(쉼표 구분)<input name="members" placeholder="민수, 지영, 현우" required></label><button class="primary">만들기</button></form></div>`;
+}
+function viewProject(p) {
+  const opts = p.members.map(m => `<option>${esc(m)}</option>`).join('');
+  return `<h1>${esc(p.name)}</h1>
+    <div class="card"><form id="newt"><label>종류<select name="kind"><option value="task">업무</option><option value="todo">할일</option><option value="post">글</option></select></label>
+      <label style="flex:1">제목<input name="title" required maxlength="200"></label>
+      <label>담당<select name="assignee"><option value="">미지정</option>${opts}</select></label>
+      <label>마감<input type="date" name="due"></label><button class="primary">등록</button></form></div>
+    <div class="card"><h2>피드</h2>${db.tasks.filter(t => t.projectId === p.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map(taskLine).join('') || '<p class="mute">아직 게시물이 없습니다</p>'}</div>
+    <div class="card"><form id="editp"><label style="flex:1">멤버(쉼표 구분)<input name="members" value="${esc(p.members.join(', '))}" required></label>
+      <button>멤버 저장</button><button type="button" class="danger" id="delp">프로젝트 삭제</button></form></div>`;
+}
+function viewTask(t) {
+  const p = db.projects.find(p => p.id === t.projectId);
+  const opts = (p?.members || []).map(m => `<option ${m === t.assignee ? 'selected' : ''}>${esc(m)}</option>`).join('');
+  return `<p><a href="#/p/${t.projectId}">← ${esc(p?.name)}</a></p>
+    <div class="card"><form id="editt">
+      <label style="flex:1 1 100%">제목<input name="title" value="${esc(t.title)}" required maxlength="200"></label>
+      <label>상태<select name="status">${STATUSES.map(s => `<option value="${s.id}" ${s.id === t.status ? 'selected' : ''}>${s.name}</option>`).join('')}</select></label>
+      <label>담당<select name="assignee"><option value="">미지정</option>${opts}</select></label>
+      <label>우선순위<select name="priority">${['낮음', '보통', '높음', '긴급'].map((l, i) => `<option value="${i}" ${i == t.priority ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+      <label>진척 %<input type="number" name="progress" min="0" max="100" value="${t.progress}"></label>
+      <label>시작<input type="date" name="start" value="${t.start || ''}"></label><label>마감<input type="date" name="due" value="${t.due || ''}"></label>
+      <label style="flex:1 1 100%">내용<textarea name="body">${esc(t.body)}</textarea></label>
+      <button class="primary">저장</button><button type="button" class="danger" id="delt">삭제</button></form></div>
+    <div class="card"><h2>댓글 ${t.comments.length}</h2>${t.comments.map(c => `<p><b>${esc(c.author)}</b> <span class="mute">${new Date(c.at).toLocaleString()}</span><br>${esc(c.body)}</p>`).join('')}
+      <form id="newc"><label style="flex:1">${esc(db.me || '나')}<input name="body" required maxlength="5000"></label><button>댓글</button></form></div>`;
+}
+
+function render() {
+  const [, kind, id] = location.hash.split('/');
+  const p = kind === 'p' && db.projects.find(x => x.id === id), t = kind === 't' && db.tasks.find(x => x.id === id);
+  $('#nav').innerHTML = `<a href="#/" ${!p && !t ? 'aria-current="page"' : ''}>대시보드</a>` +
+    db.projects.map(x => `<a href="#/p/${x.id}" ${(p || db.projects.find(q => q.id === t?.projectId))?.id === x.id ? 'aria-current="page"' : ''}>${esc(x.name)}</a>`).join('');
+  $('#me').innerHTML = ['', ...people()].map(n => `<option ${n === db.me ? 'selected' : ''}>${esc(n)}</option>`).join('');
+  $('#app').innerHTML = t ? viewTask(t) : p ? viewProject(p) : viewDashboard();
+}
+const fd = f => Object.fromEntries(new FormData(f));
+const names = s => [...new Set(s.split(',').map(x => x.trim()).filter(Boolean))];
+document.addEventListener('submit', e => {
+  e.preventDefault(); const f = fd(e.target), id = location.hash.split('/')[2];
+  if (e.target.id === 'newp') {
+    const p = { id: crypto.randomUUID(), name: f.name.trim(), members: names(f.members) };
+    db.projects.push(p); location.hash = '#/p/' + p.id;
+  } else if (e.target.id === 'newt') {
+    db.tasks.push({ id: crypto.randomUUID(), projectId: id, kind: f.kind, title: f.title.trim(), body: '', status: 'wait',
+      assignee: f.assignee, priority: 1, progress: 0, start: '', due: f.due, createdAt: new Date().toISOString(), comments: [] });
+  } else if (e.target.id === 'editp') {
+    db.projects.find(p => p.id === id).members = names(f.members);
+  } else if (e.target.id === 'editt') {
+    if (f.start && f.due && f.due < f.start) return alert('마감일이 시작일보다 빠릅니다');
+    Object.assign(db.tasks.find(t => t.id === id), { ...f, title: f.title.trim(), priority: +f.priority, progress: Math.min(100, Math.max(0, +f.progress || 0)) });
+  } else if (e.target.id === 'newc') {
+    db.tasks.find(t => t.id === id).comments.push({ author: db.me || '나', body: f.body.trim(), at: new Date().toISOString() });
+  }
+  commit();
+});
+document.addEventListener('click', e => {
+  const id = location.hash.split('/')[2];
+  if (e.target.id === 'delt' && confirm('이 게시물을 삭제할까요?')) {
+    const t = db.tasks.find(t => t.id === id); db.tasks = db.tasks.filter(x => x !== t); location.hash = '#/p/' + t.projectId; commit();
+  } else if (e.target.id === 'delp' && confirm('프로젝트와 모든 게시물을 삭제할까요?')) {
+    db.projects = db.projects.filter(p => p.id !== id); db.tasks = db.tasks.filter(t => t.projectId !== id); location.hash = '#/'; commit();
+  }
+});
+$('#me').onchange = e => { db.me = e.target.value; commit(); };
+$('#exp').onclick = () => {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' }));
+  a.download = `flowlite-${today()}.json`; a.click(); URL.revokeObjectURL(a.href);
+};
+$('#imp').onchange = async e => {
+  const file = e.target.files[0]; e.target.value = ''; if (!file) return;
+  try {
+    const d = parseImport(await file.text());
+    if (confirm(`현재 데이터를 파일 내용(프로젝트 ${d.projects.length}개, 게시물 ${d.tasks.length}개)으로 덮어쓸까요?`)) { db = d; commit(); }
+  } catch (err) { alert(err.message); }
+};
+addEventListener('hashchange', render);
+render();
+</script></body></html>

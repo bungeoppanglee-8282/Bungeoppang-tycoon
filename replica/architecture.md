@@ -1,4 +1,8 @@
-# 3인 스타트업 협업툴 설계 (채팅 제외, S~M)
+# 3인 스타트업 협업툴 설계 (채팅 제외, 서버 없음)
+
+> **현재 구현: 기기 내 저장(localStorage).** `app/index.html`을 브라우저로 열면 바로 동작.
+> 팀 공유 = `백업 내보내기` JSON 파일을 주고받아 `가져오기`(덮어쓰기). 아래 Supabase 설계는 실시간 공유가 필요해질 때의 업그레이드 경로(이전 SQL은 git 기록 94b1e7d).
+
 
 ## 스택 (관리형만)
 Next.js(App Router) + Supabase(Postgres·Auth·RLS·Storage) + Vercel. 이메일 알림은 Resend.
