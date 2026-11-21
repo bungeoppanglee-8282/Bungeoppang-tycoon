@@ -281,16 +281,15 @@ function shopItems(){
     it.push({id:'cctv',ico:`<img src="${SC.icon_6}">`,name:t('cctv'),desc:t('cctvD'),cost:CCTV_COST,state:S.cctv?'own':''});
     it.push({id:'truck',ico:`<img src="${SC.icon_truck}">`,name:t('truck'),desc:t('truckD'),cost:TRUCK_COST,state:S.truck?'own':''});
   }
-  // never offer what cannot be paid for: packs need a Play price (or a test build), diamond items need a way to get diamonds
-  return it.filter(i=>(!i.real||IAP.price[i.id]||iapMock())&&(!i.gem||gemOn())).map(i=>IAP.price[i.id]?{...i,real:IAP.price[i.id]}:i);
+  // nothing is hidden (owner's rule): without a Play price a pack shows its list price and buying says the payment is not open in this build
+  return it.map(i=>IAP.price[i.id]?{...i,real:IAP.price[i.id]}:i);
 }
-const gemOn=()=>iapMock()||(S.gem||0)>0||IAP_IDS.some(k=>IAP.price[k]);
 const iapMock=()=>!!P.iapTest||/[?&]iaptest=1/.test(location.search);   // test builds only
 function shopSheet(){
   const tabs=['kitchen','batter','drink','deco','store','xp'];
   const tn={kitchen:'tabKitchen',batter:'tabBatter',drink:'tabDrink',deco:'tabDeco',store:'tabStore',xp:'tabXp'};
   openSheet(`<div class="shop"><button class="xbtn" data-act="close" aria-label="close">✕</button>
-    <div class="shophead"><div class="ribbon">${t('shop')}</div><span class="cashpill"><img src="${SC.cashbox}" alt="">${money(S.wallet)}</span>${gemOn()?`<span class="cashpill gempill"><img src="${IMGP}gem_1.webp" alt="">${S.gem||0}</span>`:''}</div>
+    <div class="shophead"><div class="ribbon">${t('shop')}</div><span class="cashpill"><img src="${SC.cashbox}" alt="">${money(S.wallet)}</span><span class="cashpill gempill"><img src="${IMGP}gem_1.webp" alt="">${S.gem||0}</span></div>
     <div class="tabs">${tabs.map(x=>`<button class="tab${x===shopTab?' on':''}" data-tab="${x}">${t(tn[x])}</button>`).join('')}</div>
     ${shopTab==='xp'?`<div class="xptab">${xpBody()}</div>`:''}<div class="items${shopTab==='deco'||shopTab==='store'?' cards':''}">${(shopTab==='xp'?[]:shopItems()).map(i=>`<div class="item ${i.state}"><div class="iico">${i.ico}</div><div class="itx"><b>${i.name}</b><small>${i.desc}</small></div>
       ${i.state==='max'?`<span class="tag ok">✓ ${t('max')}</span>`:i.state==='own'?`<span class="tag ok">✓ ${t('owned')}</span>`:i.state==='ship'?`<span class="tag ship">${i.id[0]==='d'?'🚚':'🔬'} ${i.need}</span>`:i.state==='lock'?`<span class="tag">🔒 ${i.need}</span>`:
@@ -302,7 +301,7 @@ function buy(id){
   const it=shopItems().find(i=>i.id===id);if(!it||it.state)return;
   // real checkout is js/iap.js; the free mock sheet below is for test builds only (iapMock)
   if(it.real){if(!iapMock())return iapBuy(id);iapId=id;return openSheet(`<div class="pause"><div class="ribbon">${it.name}</div><p class="sub">${t('iapTest',it.real)}</p><div class="row3"><button class="gbtn ghost" data-act="iapno">${t('cancel')}</button><button class="gbtn iap" data-act="iapok">${it.real}</button></div></div>`)}
-  if(it.gem){if((S.gem||0)<it.gem){shopTab='store';toast(t('tGem'));return shopSheet()}S.gem-=it.gem;iapGrant(id);save();FX.on('buy');return shopSheet()}
+  if(it.gem)return gemAsk(it);
   if(S.wallet<it.cost){toast(t('tCash'));return}
   S.wallet-=it.cost;
   if(id==='row')S.rows++;else if(id==='gas')S.gas++;else if(id==='plate')S.plates++;else if(id==='mini')S.mini=true;
@@ -717,6 +716,7 @@ function act(a){
   else if(a==='fuelshop'){shopTab='store';shopSheet()}
   else if(a==='iapok'){iapGrant(iapId);save();FX.on('buy');shopSheet()}
   else if(a==='iapno')shopSheet();
+  else if(a==='gemok')gemSpend();else if(a==='gemno')shopSheet();
   else if(a==='dbl'){if(R.dbl)return;showAd(()=>{if(R.dbl)return;R.dbl=true;S.wallet+=R.earned;save();
     const b=$('dbl');if(b){b.disabled=true;b.textContent=t('dblGot',money(R.earned))}const c=$('countup');if(c)countUp(c,R.earned*2);sfx('coin')})}
   else if(a==='cont'){showAd(()=>{R.contUsed=true;R.dur+=30;R.ended=false;R.running=true;closeSheet(true)})}

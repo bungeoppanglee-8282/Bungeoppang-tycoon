@@ -282,3 +282,10 @@ Object.assign(L.en,{gemPack:n=>`${n} Diamonds`,gemPackD:'In-game diamonds for bo
 Object.assign(L.ja,{gemPack:n=>`ダイヤ${n}個`,gemPackD:'ブースターや特別アイテムに使えるダイヤです',gemGot:n=>`ダイヤ${n}個を受け取りました!`,tGem:'ダイヤが足りません。ショップでチャージしてください'});
 Object.assign(L.zh,{gemPack:n=>`钻石${n}个`,gemPackD:'游戏内钻石,可购买加速道具和特别物品',gemGot:n=>`获得了${n}颗钻石!`,tGem:'钻石不足,请先充值'});
 Object.assign(L.es,{gemPack:n=>`${n} diamantes`,gemPackD:'Diamantes del juego para potenciadores y objetos especiales',gemGot:n=>`¡Has recibido ${n} diamantes!`,tGem:'No tienes suficientes diamantes. Consigue más en la tienda'});
+
+// ---------- diamond purchase confirmation + payment-not-open notice ----------
+Object.assign(L.ko,{gemAsk:(n,left)=>`다이아 ${n}개를 사용해서 구매할까요? 구매 후 남는 다이아: ${left}개`,payNA:'이 버전에서는 다이아 결제를 아직 열지 않았어요. 구글 플레이 앱에서 충전할 수 있어요'});
+Object.assign(L.en,{gemAsk:(n,left)=>`Spend ${n} diamonds on this? Diamonds left after buying: ${left}`,payNA:'Diamond payment is not open in this version yet. You can top up in the Google Play app'});
+Object.assign(L.ja,{gemAsk:(n,left)=>`ダイヤ${n}個を使って購入しますか?購入後の残りダイヤ:${left}個`,payNA:'このバージョンではダイヤの決済はまだ開いていません。Google Playのアプリでチャージできます'});
+Object.assign(L.zh,{gemAsk:(n,left)=>`要花费${n}颗钻石购买吗?购买后剩余钻石:${left}颗`,payNA:'此版本暂未开放钻石支付。可以在Google Play应用中充值'});
+Object.assign(L.es,{gemAsk:(n,left)=>`¿Gastar ${n} diamantes en esto? Diamantes restantes: ${left}`,payNA:'El pago de diamantes aún no está abierto en esta versión. Puedes recargar en la app de Google Play'});

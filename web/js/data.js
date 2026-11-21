@@ -97,7 +97,7 @@ const CUST_SPOTS=[100,265,455,620];
 const RANK_SAMPLE=[['황금붕어',9850],['팥부자',8720],['슈크림왕',7640],['바삭붕어',6980],['밤시장',6420],['반죽달인',5810],['노릇노릇',5390],['붕어공방',4950],['달콤팥',4520],['첫붕어',4180]], RANK_REV=450;
 // booster pack: month-long attendance gift, also sold in the shop. Price = unit prices (3,900/20, 2,900/3, 2,200/20) x 5 each = 6,358 -> 15% off = 5,404 -> 5,400
 const ATT_PACK={bake:5,ice:5,mini:5};
-// Diamonds (💎) are the only thing sold for real money. Rule of thumb: 1 💎 = ~₩100; the 100 pack is ~10% cheaper per 💎.
+// Diamonds (💎) are the only thing sold for real money. List price 1 💎 = ₩100; discount per pack: 50 → 2%, 100 → 11%, 200 → 12.5%, 300 → 18%.
 // GEM_PACKS key = Play Console product id (must match exactly, type: consumable) -> [diamonds, label used only by the test checkout]. The real price comes from Play.
-const GEM_PACKS={gem50:[50,'₩4,900'],gem100:[100,'₩8,900']}, IAP_IDS=Object.keys(GEM_PACKS);
+const GEM_PACKS={gem50:[50,'₩4,900'],gem100:[100,'₩8,900'],gem200:[200,'₩17,500'],gem300:[300,'₩24,500']}, IAP_IDS=Object.keys(GEM_PACKS);
 const GEM_COST={minibag:20,attpack:50,bake:40,ice:30};   // diamond price of the booster packs (permanent items: see PERKS)
