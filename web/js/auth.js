@@ -6,7 +6,8 @@ window.AuthProviders=window.AuthProviders||{};
 let authNext=null;
 const authTest=()=>!!P.authTest||/[?&]authtest=1/.test(location.search);   // browser test: login "succeeds"
 // run next() once a choice exists; Toss has its own login, and a saved choice is never asked again
-function authGate(next){if(BUILD==='toss'||P.auth)return next();authNext=next;loginSheet()}
+// no provider is wired yet, so the screen would only show dead buttons: skip it until one is (preview it with ?authtest=1)
+function authGate(next){if(BUILD==='toss'||P.auth||(!authTest()&&!Object.values(AUTH_READY).some(Boolean)))return next();authNext=next;loginSheet()}
 function loginSheet(){openSheet(`<div class="end"><div class="ribbon">🔐</div><p class="sub">${t('authSub')}</p>
   ${Object.keys(AUTH_NAME).map(k=>`<button class="gbtn wide authbtn ${k}" data-auth="${k}">${t('authIn',AUTH_NAME[k])}</button>`).join('')}
   <button class="gbtn ghost wide" data-auth="guest">${t('authGuest')}</button></div>`,true)}

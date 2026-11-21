@@ -40,12 +40,12 @@
 
 ## 2. 게임을 앱에 넣기 (매번 하는 일)
 
-게임 원본은 `game/` 폴더에 있습니다. 앱은 이 폴더를 `app/www`로 복사해서 씁니다.
+게임 원본은 `web/` 폴더에 있습니다. 앱은 이 폴더를 `app/www`로 복사해서 씁니다.
 
 ```bash
 cd app
 npm install          # 처음 한 번만
-npm run sync         # game → www 복사(BRIEF.md 제외) + 안드로이드/iOS 프로젝트에 반영
+npm run sync         # web → www 복사(BRIEF.md 제외) + 안드로이드/iOS 프로젝트에 반영
 ```
 - 아이콘이나 스플래시를 바꿨다면: `python3 resources/make_store_art.py` → `npm run assets` → `npm run sync`
 - **게임을 고칠 때마다 `npm run sync`를 실행한 다음 빌드하세요.** 실행하지 않으면 예전 게임이 그대로 들어갑니다.
@@ -63,7 +63,7 @@ npm run sync         # game → www 복사(BRIEF.md 제외) + 안드로이드/iO
    - ⚠️ **키스토어 파일(.jks)과 비밀번호는 절대 잃어버리면 안 됩니다.** 클라우드와 USB 두 곳 이상에 보관하세요. (Play 앱 서명을 쓰면 업로드 키를 잃어버렸을 때 재설정할 수 있지만 절차가 번거롭습니다.)
 5. ☐ `app-release.aab` 파일이 만들어집니다.
 6. ☐ Play Console → 앱 만들기 → **테스트 → 비공개 테스트**에 .aab를 올리고 테스터 12명을 초대한 뒤 **14일**을 기다립니다.
-7. ☐ 그동안 스토어 등록정보, 콘텐츠 등급, 데이터 보안, 타깃 연령, 광고 여부(없음)를 채웁니다.
+7. ☐ 그동안 스토어 등록정보, 콘텐츠 등급, 데이터 보안(5장 답안), **타깃 연령 = 13세 이상**(13세 미만 선택 금지), **광고 포함 = 예**, 인앱 상품(3-1장)을 채웁니다.
 8. ☐ 14일이 지나면 **프로덕션 액세스 신청** → 심사 → 출시.
 
 ### 3-1. 인앱 상품 등록 (Play Console, 진짜 결제용)
@@ -107,30 +107,44 @@ npm run sync         # game → www 복사(BRIEF.md 제외) + 안드로이드/iO
 
 ---
 
-## 5. 개인정보처리방침
+## 5. 개인정보처리방침과 데이터 보안 양식
 
-- 게임 진행 상황(돈, 날짜, 설정)은 **기기 안(localStorage)에만** 저장됩니다. 서버, 로그인, 광고, 분석 도구, 결제가 모두 없습니다.
-- 그래도 **두 스토어 모두 개인정보처리방침 URL이 필수**입니다. 노션 공개 페이지나 GitHub Pages 한 장이면 충분합니다.
-- ⚠️ **확인 필요**: 현재 `game/index.html`이 Google Fonts(fonts.googleapis.com)를 **인터넷에서 불러옵니다.** 이렇게 되면 ① 오프라인에서 글꼴이 바뀌고 ② 사용자의 IP가 Google로 전송됩니다. 출시 전에 글꼴 파일을 게임 폴더 안에 넣는 것(self-host)을 강력히 권합니다. 그러면 "어떤 데이터도 외부로 전송하지 않음"이라고 쓸 수 있습니다. (팀 규칙 "런타임 네트워크 요청 없음"에도 맞습니다.)
-- App Store 개인정보 항목: **"데이터를 수집하지 않음"**. Play 데이터 보안: **수집·공유하는 데이터 없음**. 글꼴 문제를 해결한 다음 기준입니다.
+앱이 지금 다루는 정보 (코드 기준, 2026-11-21):
 
-방침 초안 (붙여 넣어서 쓰세요):
-> **붕어빵 타이쿤 개인정보처리방침**
-> 붕어빵 타이쿤은 어떠한 개인정보도 수집, 저장, 전송하지 않습니다. 게임 진행 상황은 사용자의 기기 안에만 저장되며, 앱을 삭제하면 함께 삭제됩니다. 광고, 분석 도구, 로그인, 인앱 결제를 사용하지 않습니다. 문의: [이메일]
-> 시행일: 20XX-XX-XX
+| 정보 | 언제 | 어디로 |
+|---|---|---|
+| 게임 진행 데이터 | 항상 | 기기 안에만 |
+| 가게 이름, 누적 판매 개수·수익, 익명 ID | **랭킹 참여를 허용한 경우만** | Google Firebase(서울) |
+| 푸시 토큰, 언어 | 랭킹 참여 + 랭킹 알림 ON인 경우만 | Google Firebase |
+| 광고 ID, 기기·앱 정보 | 광고가 나올 때 | Google AdMob |
+| 구매 내역 | 유료 상품을 살 때 | Google Play가 처리(앱은 카드 정보를 받지 않음) |
+
+- **개인정보처리방침 URL**: `https://bungeoppanglee-8282.github.io/Bungeoppang-tycoon/` (저장소 `main`의 `index.html`). 앱이 바뀌면 이 페이지도 같이 고칩니다. 두 스토어 모두 URL이 필수입니다.
+- 외부 글꼴(Google Fonts) 호출은 제거했습니다. 이제 글꼴 때문에 IP가 Google로 가지 않고 오프라인에서도 같은 글꼴이 나옵니다.
+- **Play 데이터 보안 양식 답안 (제 판단입니다. 콘솔에서 직접 확인하세요)**
+  - 수집: 기기 또는 기타 ID(광고 ID, 푸시 토큰, 익명 사용자 ID)
+  - 수집: 사용자 생성 콘텐츠(가게 이름과 랭킹 점수, 랭킹 참여 시에만 · 선택)
+  - 공유: 광고 ID → Google AdMob (광고 목적)
+  - 전송 중 암호화: 예 / 삭제 요청: 예(랭킹 화면의 '내 랭킹 기록 삭제' 버튼 + 이메일)
+  - **광고 포함: 예** / 인앱 구매: 예
+- App Store(iOS 출시 때): 광고 ID와 사용자 콘텐츠 항목으로 "영양 성분표"를 다시 채웁니다. iOS에는 아직 StoreKit 결제가 없어서 유료 상품은 숨겨집니다.
+- 삭제 안내 페이지: `delete.html`(저장소 `main`). Play 양식의 "계정 삭제 URL" 칸에는 로그인을 제공하기 전까지 필요하지 않습니다.
 
 ---
 
 ## 6. 연령 등급
 
-- **Google Play**: IARC 설문에 답합니다. 폭력, 선정성, 도박, 실제 돈 결제, 사용자 간 소통이 모두 "없음"이면 보통 **전체이용가(3+)**가 나옵니다. 한국 등급(게임물관리위원회)도 IARC 결과로 자동 처리됩니다.
+- **Google Play**: IARC 설문에 답합니다. 폭력, 선정성, 도박은 "없음"입니다. 다만 **유료 아이템 구매(디지털 구매) "있음"**, **광고 "있음"**, 랭킹에 가게 이름이 다른 이용자에게 보이므로 **사용자 간 공유 "해당 여부"** 문항은 "가게 이름만 공개, 채팅 없음"으로 답합니다. 이 때문에 등급이 3+보다 올라갈 수 있습니다(제 추정). 한국 등급(게임물관리위원회)도 IARC 결과로 자동 처리됩니다.
+- **타깃 연령**: Play Console의 '타깃층'에서 **13세 이상**만 고르세요. 어린이(13세 미만)를 고르면 가족 정책이 적용되어 지금의 광고·푸시 구성이 규칙에 맞지 않습니다. 앱 안의 광고 요청도 13세 이상 기준(어린이 대상 아님, 청소년 등급까지)으로 설정되어 있습니다.
 - **App Store**: 연령 등급 설문의 모든 항목이 "없음"이면 가장 낮은 등급이 나옵니다.
-- 참고로 게임 속 "원"은 가상 화폐이고 실제 결제가 아니므로 "도박/모의 도박"에는 해당하지 않습니다. "불량 학생이 돈을 안 내고 도망가는" 장면은 폭력이 아니므로 "없음"으로 답하면 됩니다.
+- 참고로 게임 속 "원"(코인)은 가상 화폐이고, 실제 돈이 드는 것은 유료 아이템뿐이므로 "도박/모의 도박"에는 해당하지 않습니다. "불량 학생이 돈을 안 내고 도망가는" 장면은 폭력이 아니므로 "없음"으로 답하면 됩니다.
 - 한국 App Store에 게임을 출시할 때는 등급분류 관련 확인 절차가 있을 수 있습니다. 제출할 때 App Store Connect 안내를 따르세요.
 
 ---
 
 ## 7. 스크린샷과 그래픽
+
+**⏳ 순서: 스크린샷은 게임 개발이 모두 끝난 뒤에 찍습니다**(화면이 바뀌면 다시 찍어야 합니다). 지금은 아직 없습니다. Play 휴대폰 스크린샷 2장 이상이 필수입니다.
 
 **⚠️ 스크린샷은 실제 게임 화면이어야 합니다.** 6.9"/6.5" 아이폰 스크린샷과 Play 스크린샷 모두 실제 기기나 시뮬레이터에서 실제로 플레이한 장면을 캡처하세요. 실제와 다른 목업은 심사에서 거절될 수 있습니다. 장면 위에 설명 문구를 얹는 것은 괜찮습니다.
 
@@ -163,7 +177,7 @@ npm run sync         # game → www 복사(BRIEF.md 제외) + 안드로이드/iO
 
 - **이름(제목)**: 붕어빵 타이쿤
 - **부제 (App Store)**: 추억의 피처폰 붕어빵 장사 게임
-- **간단한 설명 (Play, 80자 이내)**: 반죽 붓고, 팥 넣고, 뒤집어! 30일 안에 푸드트럭 사장님이 되어 보세요.
+- **간단한 설명 (Play, 80자 이내)**: 반죽 붓고, 팥 넣고, 뒤집어! 60단계를 깨고 푸드트럭 사장님이 되어 보세요.
 - **키워드 (App Store)**: 붕어빵,타이쿤,장사,요리,가게,경영,피처폰,레트로,추억,간식,푸드트럭
 - **자세한 설명**:
   > 그 시절 피처폰으로 하던 붕어빵 장사, 기억나세요?
@@ -183,18 +197,18 @@ npm run sync         # game → www 복사(BRIEF.md 제외) + 안드로이드/iO
   >
   > 🛒 키우는 재미
   > 틀 줄을 늘리고, 가스 불을 키우고, 노점을 꾸밀수록 붕어빵 값이 올라가요.
-  > 목표는 30일 안에 50만 원짜리 스테인리스 푸드트럭!
+  > 60단계를 깨며 번 돈으로 반짝이는 스테인리스 푸드트럭까지!
   >
   > 📱 레트로 스킨
   > 버튼 하나로 도트 그래픽과 8비트 소리의 피처폰 감성으로 바뀌어요.
   >
-  > ✔ 광고 없음 ✔ 인앱 결제 없음 ✔ 인터넷 없이 플레이 ✔ 한국어/영어 지원
+  > ✔ 실시간 랭킹 ✔ 6개 언어 지원 ✔ 광고 포함 · 일부 유료 아이템(인앱 결제)
 
 ### English
 
 - **Name (title)**: Bungeoppang Tycoon
 - **Subtitle (App Store)**: Retro fish-bread stall game
-- **Short description (Play, ≤80)**: Pour, fill, flip! Grow a street cart into a food truck in 30 days.
+- **Short description (Play, ≤80)**: Pour, fill, flip! Clear 60 stages and grow a street cart into a food truck.
 - **Keywords (App Store)**: tycoon,cooking,shop,bakery,street food,korean,retro,taiyaki,snack,food truck,idle,timing
 - **Full description**:
   > Remember the fish-shaped bread stall game on your old flip phone? It's back!
@@ -214,12 +228,12 @@ npm run sync         # game → www 복사(BRIEF.md 제외) + 안드로이드/iO
   >
   > 🛒 UPGRADE YOUR STALL
   > More mold rows, a hotter stove, and decorations that raise your price.
-  > Goal: buy the 500,000-won food truck within 30 days.
+  > Clear 60 stages and earn your way up to the shiny stainless food truck!
   >
   > 📱 RETRO SKIN
   > One tap turns on pixel art and 8-bit sounds, just like the feature-phone days.
   >
-  > ✔ No ads ✔ No in-app purchases ✔ Plays offline ✔ Korean & English
+  > ✔ Live ranking ✔ 6 languages ✔ Contains ads and optional in-app purchases
   >
   > The English version includes a step-by-step tutorial.
 

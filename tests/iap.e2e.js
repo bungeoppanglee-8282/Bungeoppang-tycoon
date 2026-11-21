@@ -1,6 +1,6 @@
 // Run: npm i playwright && node tests/iap.e2e.js   Checks the Play-billing flow in js/iap.js against a fake Billing plugin.
 const {chromium}=require('playwright'),assert=require('assert'),path=require('path');
-const URL='file://'+path.resolve(__dirname,'../web/index.html')+'?authtest=1';
+const URL='file://'+path.resolve(__dirname,'../web/index.html');
 // fake plugin: prices for every id; `owned` is what Play says is paid but not delivered; finishFails makes finish() reject
 const fake=(opt)=>`window.__calls=[];window.__opt=${JSON.stringify(opt)};
 window.Capacitor={isNativePlatform:()=>true,Plugins:{Billing:{
