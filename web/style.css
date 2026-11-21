@@ -867,3 +867,4 @@ html[lang="ko"] body,html[lang="ko"] button,html[lang="ko"] input,html[lang="ko"
 .authbtn.naver{background:#03c75a;box-shadow:0 6px 0 #028a3e}
 
 .gempill{margin-top:6px}
+.paybox{max-height:88vh;overflow-y:auto}

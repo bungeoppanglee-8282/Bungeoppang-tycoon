@@ -1,5 +1,5 @@
 #!/bin/bash
-# Cloud Shell에 통째로 붙여넣고 실행: 서버 함수 파일 생성 후 배포
+# Cloud Shell에 통째로 붙여넣고 실행: 서버 함수 파일 생성 후 배포 (server/build_deploy.py가 만든 파일, 직접 고치지 말 것)
 set -e; mkdir -p ~/bpt/functions && cd ~/bpt
 cat > firebase.json <<"EOF1"
 {"functions":[{"source":"functions","codebase":"default"}]}
@@ -13,7 +13,7 @@ cat > functions/package.json <<"EOF3"
 EOF3
 cat > functions/index.js <<"EOF4"
 // Ranking-overtake push: when a shop's score rises, every shop it just passed on that chart gets one push.
-// Runs in Seoul (asia-northeast3) next to the database. Rules (same as the in-game local notifications): max 1 per player per day, none 21:30-07:50 KST.
+// Runs in Seoul (asia-northeast3) next to the database. Rules (same as the in-game local notifications): max 1 per player per day, only 08:00-08:50, 11:55-13:00, 18:00-22:30 KST.
 const {onDocumentWritten}=require('firebase-functions/v2/firestore');
 const admin=require('firebase-admin');
 admin.initializeApp();
@@ -63,7 +63,66 @@ exports.overtaken=onDocumentWritten({document:'shops/{uid}',region:'asia-northea
     }
   }));
 });
+
+// ---- web-version payments (Toss Payments): functions/pay.js holds the logic. Setup: firebase functions:secrets:set TOSS_SECRET_KEY
+const {onRequest}=require('firebase-functions/v2/https');
+const {defineSecret}=require('firebase-functions/params');
+const {makeOrder,confirmOrder}=require('./pay');
+const TOSS_KEY=defineSecret('TOSS_SECRET_KEY');
+const TOSS='https://api.tosspayments.com/v1/payments';
+async function toss(body){
+  const h={Authorization:'Basic '+Buffer.from(TOSS_KEY.value()+':').toString('base64'),'Content-Type':'application/json'};
+  let r=await fetch(TOSS+'/confirm',{method:'POST',headers:h,body:JSON.stringify(body)}),j=await r.json();
+  if(!r.ok&&j.code==='ALREADY_PROCESSED_PAYMENT'){r=await fetch(TOSS+'/'+encodeURIComponent(body.paymentKey),{headers:h});j=await r.json()}   // a retry after a lost answer: read the payment instead
+  if(!r.ok)throw Object.assign(new Error(j.message||'toss error'),{status:502});
+  return j;
+}
+const api=fn=>onRequest({region:'asia-northeast3',cors:true,secrets:[TOSS_KEY]},async(req,res)=>{
+  try{
+    if(req.method!=='POST')return res.status(405).end();
+    const m=/^Bearer (.+)$/.exec(req.get('Authorization')||'');if(!m)return res.status(401).json({error:'sign in first'});
+    const uid=(await admin.auth().verifyIdToken(m[1])).uid;
+    res.json(await fn(uid,req.body||{}));
+  }catch(e){if(!e.status)console.error(e);res.status(e.status||500).json({error:e.status?e.message:'server error'})}
+});
+exports.payOrder=api((uid,b)=>makeOrder(db,uid,String(b.packId)));
+exports.payConfirm=api((uid,b)=>confirmOrder(db,toss,uid,{paymentKey:String(b.paymentKey),orderId:String(b.orderId),amount:b.amount}));
 exports._t={quiet,dayKey};
 EOF4
+cat > functions/pay.js <<"EOF5"
+// Web-version payments (Toss Payments). The server owns the price list and the order book, so a client can never pick its own amount.
+const crypto=require('crypto');
+// pack id -> [diamonds, won]. Keep equal to GEM_PACKS in web/js/data.js (tests/pay.test.js checks it).
+const PACKS={gem50:[50,4900],gem100:[100,8900],gem200:[200,17500],gem300:[300,24500]};
+const fail=(status,message)=>Object.assign(new Error(message),{status});
+
+async function makeOrder(db,uid,packId){
+  const p=PACKS[packId];if(!p)throw fail(400,'unknown pack');
+  const orderId='bpt_'+crypto.randomBytes(16).toString('hex');   // Toss wants 6-64 chars of A-Za-z0-9_=-
+  await db.doc('orders/'+orderId).set({uid,packId,gems:p[0],amount:p[1],status:'ready',createdAt:Date.now()});
+  return {orderId,amount:p[1],gems:p[0],orderName:`다이아 ${p[0]}개`};
+}
+
+// toss(body) calls Toss' confirm API and returns its Payment object. Statuses: ready -> paying -> paid | failed. Safe to call twice.
+async function confirmOrder(db,toss,uid,{paymentKey,orderId,amount}){
+  const ref=db.doc('orders/'+orderId);
+  const claim=await db.runTransaction(async tx=>{
+    const s=await tx.get(ref);if(!s.exists)throw fail(404,'no such order');
+    const o=s.data();if(o.uid!==uid)throw fail(403,'not your order');
+    if(o.amount!==Number(amount))throw fail(400,'amount mismatch');          // the amount in the return URL is the client's word; ours is the one that counts
+    if(o.status==='paid')return {done:true,gems:o.gems};
+    if(o.status==='paying')throw fail(409,'busy');
+    tx.update(ref,{status:'paying'});return {done:false,gems:o.gems,amount:o.amount};
+  });
+  if(claim.done)return {gems:claim.gems,already:true};
+  let r;
+  try{r=await toss({paymentKey,orderId,amount:claim.amount})}
+  catch(e){await ref.update({status:'ready'});throw e}                       // network or Toss error: let the player retry
+  if(r.status!=='DONE'||r.orderId!==orderId||r.totalAmount!==claim.amount){await ref.update({status:'failed'});throw fail(402,'payment not completed')}
+  await ref.update({status:'paid',paymentKey,method:r.method||null,paidAt:Date.now()});
+  return {gems:claim.gems};
+}
+module.exports={PACKS,makeOrder,confirmOrder};
+EOF5
 (cd functions && npm install --silent)
 firebase deploy --only functions --project my-bungeoppang-tycoon

@@ -49,4 +49,28 @@ exports.overtaken=onDocumentWritten({document:'shops/{uid}',region:'asia-northea
     }
   }));
 });
+
+// ---- web-version payments (Toss Payments): functions/pay.js holds the logic. Setup: firebase functions:secrets:set TOSS_SECRET_KEY
+const {onRequest}=require('firebase-functions/v2/https');
+const {defineSecret}=require('firebase-functions/params');
+const {makeOrder,confirmOrder}=require('./pay');
+const TOSS_KEY=defineSecret('TOSS_SECRET_KEY');
+const TOSS='https://api.tosspayments.com/v1/payments';
+async function toss(body){
+  const h={Authorization:'Basic '+Buffer.from(TOSS_KEY.value()+':').toString('base64'),'Content-Type':'application/json'};
+  let r=await fetch(TOSS+'/confirm',{method:'POST',headers:h,body:JSON.stringify(body)}),j=await r.json();
+  if(!r.ok&&j.code==='ALREADY_PROCESSED_PAYMENT'){r=await fetch(TOSS+'/'+encodeURIComponent(body.paymentKey),{headers:h});j=await r.json()}   // a retry after a lost answer: read the payment instead
+  if(!r.ok)throw Object.assign(new Error(j.message||'toss error'),{status:502});
+  return j;
+}
+const api=fn=>onRequest({region:'asia-northeast3',cors:true,secrets:[TOSS_KEY]},async(req,res)=>{
+  try{
+    if(req.method!=='POST')return res.status(405).end();
+    const m=/^Bearer (.+)$/.exec(req.get('Authorization')||'');if(!m)return res.status(401).json({error:'sign in first'});
+    const uid=(await admin.auth().verifyIdToken(m[1])).uid;
+    res.json(await fn(uid,req.body||{}));
+  }catch(e){if(!e.status)console.error(e);res.status(e.status||500).json({error:e.status?e.message:'server error'})}
+});
+exports.payOrder=api((uid,b)=>makeOrder(db,uid,String(b.packId)));
+exports.payConfirm=api((uid,b)=>confirmOrder(db,toss,uid,{paymentKey:String(b.paymentKey),orderId:String(b.orderId),amount:b.amount}));
 exports._t={quiet,dayKey};

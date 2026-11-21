@@ -1,5 +1,5 @@
 // ---------- real-money items: Google Play Billing through the app's Billing plugin (BillingPlugin.kt) ----------
-// Plain browser and Toss builds have no plugin: IAP.price stays empty, packs show their list price and buying shows a "payment not open yet" notice.
+// Plain browser and Toss builds have no plugin: IAP.price stays empty, packs show their list price and buying goes to webpay.js.
 // shortcut: no server-side receipt check; a rooted phone can fake a purchase. Add a Cloud Function that verifies the token with the Play API if abuse shows up.
 const IAP={price:{}};
 const BL=()=>window.Capacitor?.isNativePlatform?.()&&window.Capacitor.Plugins?.Billing;
@@ -32,7 +32,7 @@ function gemSpend(){
   S.gem-=it.gem;iapGrant(id);save();FX.on('buy');shopSheet();
 }
 async function iapBuy(id){
-  if(!BL())return openSheet(`<div class="pause"><div class="ribbon">💎</div><p class="sub">${t('payNA')}</p><button class="gbtn wide" data-act="iapno">${t('ok')}</button></div>`);   // no Play here (web / Toss build): say so instead of hiding the pack
+  if(!BL())return webPay(id);   // no Play here: the web build pays through Toss Payments (webpay.js); the Toss build says it is not open yet
   try{await iapDeliver(await BL().buy({id}));FX.on('buy');shopSheet()}
   catch(e){if(e.code==='owned')iapInit().then(shopSheet);else if(e.code!=='cancel')toast(t(e.code==='pending'?'iapPending':'iapFail'))}
 }

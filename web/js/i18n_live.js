@@ -289,3 +289,4 @@ Object.assign(L.en,{gemAsk:(n,left)=>`Spend ${n} diamonds on this? Diamonds left
 Object.assign(L.ja,{gemAsk:(n,left)=>`ダイヤ${n}個を使って購入しますか?購入後の残りダイヤ:${left}個`,payNA:'このバージョンではダイヤの決済はまだ開いていません。Google Playのアプリでチャージできます'});
 Object.assign(L.zh,{gemAsk:(n,left)=>`要花费${n}颗钻石购买吗?购买后剩余钻石:${left}颗`,payNA:'此版本暂未开放钻石支付。可以在Google Play应用中充值'});
 Object.assign(L.es,{gemAsk:(n,left)=>`¿Gastar ${n} diamantes en esto? Diamantes restantes: ${left}`,payNA:'El pago de diamantes aún no está abierto en esta versión. Puedes recargar en la app de Google Play'});
+Object.assign(L.ko,{payGo:'결제하기'});Object.assign(L.en,{payGo:'Pay'});Object.assign(L.ja,{payGo:'決済する'});Object.assign(L.zh,{payGo:'支付'});Object.assign(L.es,{payGo:'Pagar'});
