@@ -59,10 +59,10 @@ const NIGHT_AT=.6;  // fraction of the stage after which it is night
 const MILESTONE={3:'pizza',5:'mini',7:'choco',9:'elder',11:'milk',13:'worker',15:'gent',18:'bully',21:'jerk',24:'kinds3',27:'group',30:'lunch',33:'dubai',36:'rush'};
 const RAMP_END=40, ramp=n=>Math.min(n,RAMP_END)/RAMP_END;
 const MAX_ORDER=5, MAX_GUESTS=3, SPAWN_GAP=10;   // * at most 5 buns per order, 3 guests at once, a new guest at least 10s after the last
-// one-time real-money purchases (permanent): [save flag, price, icon]
-const PERKS={noads:['noads','₩4,900','🚫'],pat2:['pat2','₩3,900','⏳'],rack2:['rack2','₩2,900','assets/img/icon_rack2.webp']};
+// permanent items bought with diamonds: [save flag, diamond price, icon]
+const PERKS={noads:['noads',50,'🚫'],pat2:['pat2',40,'⏳'],rack2:['rack2',30,'assets/img/icon_rack2.webp']};
 const AD_MINI=3;   // mini buns from the ad booster
-const MINIBAG_PACK=20, MINIBAG_PRICE='₩2,200';   // paid pack of mini buns, used after the stage's own
+const MINIBAG_PACK=20;   // paid pack of mini buns, used after the stage's own
 // play modes: bake time, time before burning, seconds added between guests, guests at once, biggest order, extra buns per order, patience, goal
 const MODE={easy:{cook:1,grace:1.8,gap:5,guests:2,order:3,plus:0,pat:1.08,goal:.65},
   normal:{cook:1,grace:1,gap:0,guests:3,order:5,plus:0,pat:1,goal:1},
@@ -75,8 +75,8 @@ const FUEL_COST=70000, FUEL_STAGES=15;   // * commercial butane: a full tank las
 const SUPPORT_EMAIL='bungeoppanglee@gmail.com', PRIVACY_URL='https://bungeoppanglee-8282.github.io/Bungeoppang-tycoon/', TERMS_URL='https://bungeoppanglee-8282.github.io/Bungeoppang-tycoon/terms.html', DELETE_URL='https://bungeoppanglee-8282.github.io/Bungeoppang-tycoon/delete.html', APP_VER='1.0.0';
 const GOLD_EVERY=3, GOLD_PRICE=4000;   // every 3rd stage: once the grill is full one bun turns golden (sells for 4,000) and every bun finishes at once
 const BAKE_HOLD=5;   // instant-baked buns sparkle and cannot burn for this many seconds
-const BAKE_PACK=20, BAKE_PRICE='₩3,900';   // paid booster: every bun on the grill is done at once; real-money pack of 20
-const ICE_TIME=20, ICE_PACK=3, ICE_PRICE='₩2,900';   // paid booster: ready buns cannot burn for 20s; real-money pack of 3
+const BAKE_PACK=20;   // paid booster: every bun on the grill is done at once; pack of 20
+const ICE_TIME=20, ICE_PACK=3;   // paid booster: ready buns cannot burn for 20s; pack of 3
 const UNLOCK_AT=k=>+Object.keys(MILESTONE).find(n=>MILESTONE[n]===k);
 
 // ---------- customers ----------
@@ -96,5 +96,8 @@ const CUST_SPOTS=[100,265,455,620];
 // ranking: no server yet, so the other shops are sample rivals. shortcut: sample data only, replace RANK_SAMPLE with a server fetch when a backend exists
 const RANK_SAMPLE=[['황금붕어',9850],['팥부자',8720],['슈크림왕',7640],['바삭붕어',6980],['밤시장',6420],['반죽달인',5810],['노릇노릇',5390],['붕어공방',4950],['달콤팥',4520],['첫붕어',4180]], RANK_REV=450;
 // booster pack: month-long attendance gift, also sold in the shop. Price = unit prices (3,900/20, 2,900/3, 2,200/20) x 5 each = 6,358 -> 15% off = 5,404 -> 5,400
-const ATT_PACK={bake:5,ice:5,mini:5}, ATT_PACK_PRICE='₩5,400';
-const IAP_IDS=['noads','pat2','rack2','minibag','attpack','bake','ice'];   // Play Console in-app product ids: must match exactly (prices there; ₩ constants above are only the test-checkout labels)
+const ATT_PACK={bake:5,ice:5,mini:5};
+// Diamonds (💎) are the only thing sold for real money. Rule of thumb: 1 💎 = ~₩100; the 100 pack is ~10% cheaper per 💎.
+// GEM_PACKS key = Play Console product id (must match exactly, type: consumable) -> [diamonds, label used only by the test checkout]. The real price comes from Play.
+const GEM_PACKS={gem50:[50,'₩4,900'],gem100:[100,'₩8,900']}, IAP_IDS=Object.keys(GEM_PACKS);
+const GEM_COST={minibag:20,attpack:50,bake:40,ice:30};   // diamond price of the booster packs (permanent items: see PERKS)

@@ -272,34 +272,37 @@ function shopItems(){
   }else{
     it.push({id:'churu1',ico:`<img src="${IMGP}churu_1.webp">`,name:t('churu'),desc:t('churuD',S.churu||0),cost:CHURU_ONE,state:''});
     it.push({id:'churu10',ico:`<img src="${IMGP}churu_10.webp">`,name:t('churu10'),desc:t('churuD',S.churu||0),cost:CHURU_TEN,state:''});
-    for(const k in PERKS)it.push({id:k,ico:PERKS[k][2].endsWith(".webp")?`<img class="minis" style="width:68px" src="${PERKS[k][2]}" alt="">`:`<span class="iceico">${PERKS[k][2]}</span>`,name:t('pk_'+k),desc:t('pkd_'+k),cost:0,real:PERKS[k][1],state:S[k]?'own':''});
-    it.push({id:'minibag',ico:`<img src="${BUN('plain','done')}" class="minis">`,name:t('miniBag',MINIBAG_PACK),desc:t('miniBagD',S.minibag||0),cost:0,real:MINIBAG_PRICE,state:''});
-    it.push({id:'attpack',ico:`<span class="iceico">🎁</span>`,name:t('attPack'),desc:t('attPackD'),cost:0,real:ATT_PACK_PRICE,state:''});
-    it.push({id:'bake',ico:`<span class="iceico">⚡</span>`,name:t('bake'),desc:t('bakeD',S.bake||0),cost:0,real:BAKE_PRICE,state:''});
-    it.push({id:'ice',ico:`<span class="iceico">❄️</span>`,name:t('ice'),desc:t('iceD',S.ice||0),cost:0,real:ICE_PRICE,state:''});
+    for(const k in GEM_PACKS)it.push({id:k,ico:`<img class="minis" style="width:68px" src="${IMGP}gem_${GEM_PACKS[k][0]}.webp" alt="">`,name:t('gemPack',GEM_PACKS[k][0]),desc:t('gemPackD'),cost:0,real:GEM_PACKS[k][1],state:''});
+    for(const k in PERKS)it.push({id:k,ico:PERKS[k][2].endsWith(".webp")?`<img class="minis" style="width:68px" src="${PERKS[k][2]}" alt="">`:`<span class="iceico">${PERKS[k][2]}</span>`,name:t('pk_'+k),desc:t('pkd_'+k),cost:0,gem:PERKS[k][1],state:S[k]?'own':''});
+    it.push({id:'minibag',ico:`<img src="${BUN('plain','done')}" class="minis">`,name:t('miniBag',MINIBAG_PACK),desc:t('miniBagD',S.minibag||0),cost:0,gem:GEM_COST.minibag,state:''});
+    it.push({id:'attpack',ico:`<span class="iceico">🎁</span>`,name:t('attPack'),desc:t('attPackD'),cost:0,gem:GEM_COST.attpack,state:''});
+    it.push({id:'bake',ico:`<span class="iceico">⚡</span>`,name:t('bake'),desc:t('bakeD',S.bake||0),cost:0,gem:GEM_COST.bake,state:''});
+    it.push({id:'ice',ico:`<span class="iceico">❄️</span>`,name:t('ice'),desc:t('iceD',S.ice||0),cost:0,gem:GEM_COST.ice,state:''});
     it.push({id:'cctv',ico:`<img src="${SC.icon_6}">`,name:t('cctv'),desc:t('cctvD'),cost:CCTV_COST,state:S.cctv?'own':''});
     it.push({id:'truck',ico:`<img src="${SC.icon_truck}">`,name:t('truck'),desc:t('truckD'),cost:TRUCK_COST,state:S.truck?'own':''});
   }
-  // real-money items show only with a Play price (or in a test build): never offer something that cannot be paid for
-  return it.filter(i=>!i.real||IAP.price[i.id]||iapMock()).map(i=>IAP.price[i.id]?{...i,real:IAP.price[i.id]}:i);
+  // never offer what cannot be paid for: packs need a Play price (or a test build), diamond items need a way to get diamonds
+  return it.filter(i=>(!i.real||IAP.price[i.id]||iapMock())&&(!i.gem||gemOn())).map(i=>IAP.price[i.id]?{...i,real:IAP.price[i.id]}:i);
 }
+const gemOn=()=>iapMock()||(S.gem||0)>0||IAP_IDS.some(k=>IAP.price[k]);
 const iapMock=()=>!!P.iapTest||/[?&]iaptest=1/.test(location.search);   // test builds only
 function shopSheet(){
   const tabs=['kitchen','batter','drink','deco','store','xp'];
   const tn={kitchen:'tabKitchen',batter:'tabBatter',drink:'tabDrink',deco:'tabDeco',store:'tabStore',xp:'tabXp'};
   openSheet(`<div class="shop"><button class="xbtn" data-act="close" aria-label="close">✕</button>
-    <div class="shophead"><div class="ribbon">${t('shop')}</div><span class="cashpill"><img src="${SC.cashbox}" alt="">${money(S.wallet)}</span></div>
+    <div class="shophead"><div class="ribbon">${t('shop')}</div><span class="cashpill"><img src="${SC.cashbox}" alt="">${money(S.wallet)}</span>${gemOn()?`<span class="cashpill gempill"><img src="${IMGP}gem_1.webp" alt="">${S.gem||0}</span>`:''}</div>
     <div class="tabs">${tabs.map(x=>`<button class="tab${x===shopTab?' on':''}" data-tab="${x}">${t(tn[x])}</button>`).join('')}</div>
     ${shopTab==='xp'?`<div class="xptab">${xpBody()}</div>`:''}<div class="items${shopTab==='deco'||shopTab==='store'?' cards':''}">${(shopTab==='xp'?[]:shopItems()).map(i=>`<div class="item ${i.state}"><div class="iico">${i.ico}</div><div class="itx"><b>${i.name}</b><small>${i.desc}</small></div>
       ${i.state==='max'?`<span class="tag ok">✓ ${t('max')}</span>`:i.state==='own'?`<span class="tag ok">✓ ${t('owned')}</span>`:i.state==='ship'?`<span class="tag ship">${i.id[0]==='d'?'🚚':'🔬'} ${i.need}</span>`:i.state==='lock'?`<span class="tag">🔒 ${i.need}</span>`:
-      i.real?`<button class="gbtn sm iap" data-buy="${i.id}">💎 ${i.real}</button>`:`<button class="gbtn sm${S.wallet<i.cost?' poor':''}" data-buy="${i.id}">${money(i.cost)}</button>`}</div>`).join('')}</div>
+      i.real?`<button class="gbtn sm iap" data-buy="${i.id}">${i.real}</button>`:i.gem?`<button class="gbtn sm iap${(S.gem||0)<i.gem?' poor':''}" data-buy="${i.id}">💎 ${i.gem}</button>`:`<button class="gbtn sm${S.wallet<i.cost?' poor':''}" data-buy="${i.id}">${money(i.cost)}</button>`}</div>`).join('')}</div>
     <button class="gbtn ghost wide" data-act="close">${t('close')}</button>
   </div>`);
 }
 function buy(id){
   const it=shopItems().find(i=>i.id===id);if(!it||it.state)return;
   // real checkout is js/iap.js; the free mock sheet below is for test builds only (iapMock)
-  if(it.real){if(!iapMock())return iapBuy(id);iapId=id;return openSheet(`<div class="pause"><div class="ribbon">${it.name}</div><p class="sub">${t('iapTest',it.real)}</p><div class="row3"><button class="gbtn ghost" data-act="iapno">${t('cancel')}</button><button class="gbtn iap" data-act="iapok">💎 ${it.real}</button></div></div>`)}
+  if(it.real){if(!iapMock())return iapBuy(id);iapId=id;return openSheet(`<div class="pause"><div class="ribbon">${it.name}</div><p class="sub">${t('iapTest',it.real)}</p><div class="row3"><button class="gbtn ghost" data-act="iapno">${t('cancel')}</button><button class="gbtn iap" data-act="iapok">${it.real}</button></div></div>`)}
+  if(it.gem){if((S.gem||0)<it.gem){shopTab='store';toast(t('tGem'));return shopSheet()}S.gem-=it.gem;iapGrant(id);save();FX.on('buy');return shopSheet()}
   if(S.wallet<it.cost){toast(t('tCash'));return}
   S.wallet-=it.cost;
   if(id==='row')S.rows++;else if(id==='gas')S.gas++;else if(id==='plate')S.plates++;else if(id==='mini')S.mini=true;

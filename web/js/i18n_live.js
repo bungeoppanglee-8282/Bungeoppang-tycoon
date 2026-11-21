@@ -275,3 +275,10 @@ Object.assign(L.en,{iapPending:'Waiting for payment approval. It will be deliver
 Object.assign(L.ja,{iapPending:'決済の承認待ちです。承認されると自動で付与されます',iapFail:'購入できませんでした。しばらくしてからもう一度お試しください'});
 Object.assign(L.zh,{iapPending:'正在等待付款确认,确认后会自动发放',iapFail:'购买失败,请稍后再试'});
 Object.assign(L.es,{iapPending:'Esperando la aprobación del pago. Se entregará automáticamente',iapFail:'No se pudo completar la compra. Inténtalo de nuevo más tarde'});
+
+// ---------- diamonds (💎): packs bought with real money, spent on boosters ----------
+Object.assign(L.ko,{gemPack:n=>`다이아 ${n}개`,gemPackD:'게임에서 쓰는 다이아예요. 부스터와 특별 아이템을 살 수 있어요',gemGot:n=>`다이아 ${n}개를 받았어요!`,tGem:'다이아가 부족해요. 다이아를 충전해 주세요'});
+Object.assign(L.en,{gemPack:n=>`${n} Diamonds`,gemPackD:'In-game diamonds for boosters and special items',gemGot:n=>`You got ${n} diamonds!`,tGem:'Not enough diamonds. Get more in the shop'});
+Object.assign(L.ja,{gemPack:n=>`ダイヤ${n}個`,gemPackD:'ブースターや特別アイテムに使えるダイヤです',gemGot:n=>`ダイヤ${n}個を受け取りました!`,tGem:'ダイヤが足りません。ショップでチャージしてください'});
+Object.assign(L.zh,{gemPack:n=>`钻石${n}个`,gemPackD:'游戏内钻石,可购买加速道具和特别物品',gemGot:n=>`获得了${n}颗钻石!`,tGem:'钻石不足,请先充值'});
+Object.assign(L.es,{gemPack:n=>`${n} diamantes`,gemPackD:'Diamantes del juego para potenciadores y objetos especiales',gemGot:n=>`¡Has recibido ${n} diamantes!`,tGem:'No tienes suficientes diamantes. Consigue más en la tienda'});

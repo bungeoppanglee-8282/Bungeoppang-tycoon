@@ -865,3 +865,5 @@ html[lang="ko"] body,html[lang="ko"] button,html[lang="ko"] input,html[lang="ko"
 .authbtn.google{background:#fff;color:#3c4043;text-shadow:none;box-shadow:0 6px 0 #b9b9b9}
 .authbtn.kakao{background:#fee500;color:#191919;text-shadow:none;box-shadow:0 6px 0 #c9b400}
 .authbtn.naver{background:#03c75a;box-shadow:0 6px 0 #028a3e}
+
+.gempill{margin-top:6px}

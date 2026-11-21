@@ -4,15 +4,14 @@
 const IAP={price:{}};
 const BL=()=>window.Capacitor?.isNativePlatform?.()&&window.Capacitor.Plugins?.Billing;
 function iapGrant(id){
-  if(PERKS[id]){S[id]=true;toast(t('tBought'))}else if(id==='minibag'){S.minibag=(S.minibag||0)+MINIBAG_PACK;toast(t('miniBagGot',MINIBAG_PACK))}else if(id==='attpack'){S.bake=(S.bake||0)+ATT_PACK.bake;S.ice=(S.ice||0)+ATT_PACK.ice;S.minibag=(S.minibag||0)+ATT_PACK.mini;toast(t('attPackGot'))}else if(id==='bake'){S.bake=(S.bake||0)+BAKE_PACK;toast(t('bakeGot',BAKE_PACK))}else{S.ice=(S.ice||0)+ICE_PACK;toast(t('iceGot',ICE_PACK))}
+  if(GEM_PACKS[id]){S.gem=(S.gem||0)+GEM_PACKS[id][0];toast(t('gemGot',GEM_PACKS[id][0]))}else if(PERKS[id]){S[id]=true;toast(t('tBought'))}else if(id==='minibag'){S.minibag=(S.minibag||0)+MINIBAG_PACK;toast(t('miniBagGot',MINIBAG_PACK))}else if(id==='attpack'){S.bake=(S.bake||0)+ATT_PACK.bake;S.ice=(S.ice||0)+ATT_PACK.ice;S.minibag=(S.minibag||0)+ATT_PACK.mini;toast(t('attPackGot'))}else if(id==='bake'){S.bake=(S.bake||0)+BAKE_PACK;toast(t('bakeGot',BAKE_PACK))}else{S.ice=(S.ice||0)+ICE_PACK;toast(t('iceGot',ICE_PACK))}
 }
-// Grant once, save, only then tell Play it was delivered. A crash in between must not grant a pack twice, so pack tokens are saved with the grant.
+// Grant once, save, only then tell Play it was delivered. A crash in between must not grant a pack twice, so the token is saved with the grant.
 async function iapDeliver(p){
-  const perk=!!PERKS[p.id];S.iapTok=S.iapTok||[];
-  if(perk){if(!S[p.id]){iapGrant(p.id);save()}}                                           // permanent item: restoring just sets the flag again
-  else if(!S.iapTok.includes(p.token)){S.iapTok.push(p.token);iapGrant(p.id);save()}
-  if(perk&&p.acked)return;
-  try{await BL().finish({token:p.token,consume:!perk});S.iapTok=S.iapTok.filter(x=>x!==p.token);save()}catch(e){}   // not finished: retried next start (Play refunds unacknowledged items after 3 days)
+  if(!GEM_PACKS[p.id])return;                                                               // unknown product: iapGrant would give it away as an ice pack
+  S.iapTok=S.iapTok||[];
+  if(!S.iapTok.includes(p.token)){S.iapTok.push(p.token);iapGrant(p.id);save()}
+  try{await BL().finish({token:p.token,consume:true});S.iapTok=S.iapTok.filter(x=>x!==p.token);save()}catch(e){}   // not finished: retried next start (Play refunds unacknowledged items after 3 days)
 }
 // at start and on return to the app: load Play prices, then deliver anything paid but not yet delivered (crash, slow payment)
 async function iapInit(){
