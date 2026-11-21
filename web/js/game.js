@@ -280,8 +280,10 @@ function shopItems(){
     it.push({id:'cctv',ico:`<img src="${SC.icon_6}">`,name:t('cctv'),desc:t('cctvD'),cost:CCTV_COST,state:S.cctv?'own':''});
     it.push({id:'truck',ico:`<img src="${SC.icon_truck}">`,name:t('truck'),desc:t('truckD'),cost:TRUCK_COST,state:S.truck?'own':''});
   }
-  return it;
+  // real-money items stay hidden until Play Billing is wired: the mock checkout below would hand them out for free
+  return it.filter(i=>!i.real||iapMock());
 }
+const iapMock=()=>!!P.iapTest||/[?&]iaptest=1/.test(location.search);   // test builds only
 function shopSheet(){
   const tabs=['kitchen','batter','drink','deco','store','xp'];
   const tn={kitchen:'tabKitchen',batter:'tabBatter',drink:'tabDrink',deco:'tabDeco',store:'tabStore',xp:'tabXp'};
@@ -296,7 +298,7 @@ function shopSheet(){
 }
 function buy(id){
   const it=shopItems().find(i=>i.id===id);if(!it||it.state)return;
-  // shortcut: mock checkout; the app build must call the App Store / Play billing here instead
+  // shortcut: mock checkout (test builds only, see iapMock); real builds need Play Billing here before any real-money item is shown
   if(it.real){iapId=id;return openSheet(`<div class="pause"><div class="ribbon">${it.name}</div><p class="sub">${t('iapTest',it.real)}</p><div class="row3"><button class="gbtn ghost" data-act="iapno">${t('cancel')}</button><button class="gbtn iap" data-act="iapok">💎 ${it.real}</button></div></div>`)}
   if(S.wallet<it.cost){toast(t('tCash'));return}
   S.wallet-=it.cost;
