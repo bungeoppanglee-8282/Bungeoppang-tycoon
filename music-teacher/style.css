@@ -141,3 +141,46 @@ audio { width: 100%; }
 .toast.show { opacity: 1; }
 .foot { text-align: center; color: var(--muted-fg); font-size: .85rem; padding: 16px; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+/* ===== Gradient theme ===== */
+:root {
+  --grad: linear-gradient(135deg, #DC2626 0%, #E11D74 45%, #7C3AED 100%);
+  --grad-warm: linear-gradient(135deg, #C2410C, #BE123C); /* white text stays >= 4.5:1 */
+  --grad-bg: radial-gradient(60% 50% at 10% 0%, #FDE2E4 0%, transparent 70%),
+             radial-gradient(50% 50% at 95% 15%, #EDE4FF 0%, transparent 70%),
+             radial-gradient(60% 60% at 50% 100%, #FFEBD2 0%, transparent 70%), #FFFBF5;
+  --border: rgba(15, 23, 42, .12);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --grad-bg: radial-gradient(60% 50% at 10% 0%, #3B1420 0%, transparent 70%),
+               radial-gradient(50% 50% at 95% 15%, #24164A 0%, transparent 70%),
+               radial-gradient(60% 60% at 50% 100%, #3A2410 0%, transparent 70%), #120F14;
+    --border: rgba(248, 245, 239, .16);
+  }
+}
+body { background: var(--grad-bg); background-attachment: fixed; }
+.top { background: color-mix(in srgb, var(--card) 75%, transparent); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
+.brand span { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.brand svg { stroke: #E11D74; }
+
+/* tiles: soft glass card with a gradient hairline border */
+.tile {
+  border: 1px solid transparent; box-shadow: 0 10px 30px -12px rgba(124, 58, 237, .25);
+  background: linear-gradient(var(--card), var(--card)) padding-box, var(--grad) border-box;
+}
+.t-player, .t-staff { box-shadow: 0 18px 40px -14px rgba(225, 29, 116, .35); }
+
+.btn, .icon, .tab, .url input { border: 1px solid var(--border); }
+.primary, .tab[aria-selected="true"] { background: var(--grad); background-size: 200% 200%; color: #fff; border-color: transparent; animation: shift 6s ease infinite; }
+.accent { background: var(--grad-warm); color: #fff; border-color: transparent; }
+[aria-pressed="true"] { background: var(--grad); color: #fff; border-color: transparent; }
+.score, .big-num { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.dots i.on { background: var(--grad); border-color: transparent; }
+.screen { background: linear-gradient(135deg, #1E1B2E, #3B1430); }
+.staff { background: linear-gradient(180deg, color-mix(in srgb, var(--bg) 70%, #fff), var(--bg)); }
+.key.hit { background: var(--grad-warm); }
+.key.ref { background: linear-gradient(180deg, #34D27B, #00843d); }
+input[type=range] { accent-color: #E11D74; }
+@keyframes shift { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+@media (prefers-reduced-motion: reduce) { .primary, .tab[aria-selected="true"] { animation: none; } }
