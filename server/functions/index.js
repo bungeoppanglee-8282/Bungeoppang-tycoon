@@ -65,11 +65,12 @@ async function toss(body){
   if(!r.ok)throw Object.assign(new Error(j.message||'toss error'),{status:502});
   return j;
 }
-const api=(fn,secrets=[])=>onRequest({region:'asia-northeast3',cors:true,secrets},async(req,res)=>{
+// auth=false is for the one function that signs a player in (tossLogin)
+const api=(fn,secrets=[],auth=true)=>onRequest({region:'asia-northeast3',cors:true,secrets},async(req,res)=>{
   try{
     if(req.method!=='POST')return res.status(405).end();
-    const m=/^Bearer (.+)$/.exec(req.get('Authorization')||'');if(!m)return res.status(401).json({error:'sign in first'});
-    const uid=(await admin.auth().verifyIdToken(m[1])).uid;
+    let uid=null;
+    if(auth){const m=/^Bearer (.+)$/.exec(req.get('Authorization')||'');if(!m)return res.status(401).json({error:'sign in first'});uid=(await admin.auth().verifyIdToken(m[1])).uid}
     res.json(await fn(uid,req.body||{}));
   }catch(e){if(!e.status)console.error(e);res.status(e.status||500).json({error:e.status?e.message:'server error'})}
 });
@@ -89,4 +90,13 @@ exports.walletGet=api(uid=>wallet.balance(db,uid));
 exports.walletSpend=api((uid,b)=>wallet.spend(db,uid,{reqId:String(b.reqId),itemId:String(b.itemId)}));
 exports.walletPlay=api((uid,b)=>wallet.playCredit(db,verifyPlay,uid,{productId:String(b.productId),token:b.token}));
 exports.walletLog=api(uid=>wallet.history(db,uid));
+
+// ---- Toss app (Apps in Toss) in-app purchase and sign-in (tossiap.js). Secrets (Apps in Toss console > mTLS certificate), set with:
+//   firebase functions:secrets:set TOSS_MTLS_CERT --data-file=<file>_public.crt   and   ... TOSS_MTLS_KEY --data-file=<file>_private.key
+// Signing in mints a Firebase custom token: the function's service account needs the role "Service Account Token Creator" (see app/STORE.md 3-4).
+const {mtlsPost,tossLogin,tossGrant}=require('./tossiap');
+const TOSS_CERT=defineSecret('TOSS_MTLS_CERT'),TOSS_PRIV=defineSecret('TOSS_MTLS_KEY');
+const tpost=(...a)=>mtlsPost(TOSS_CERT.value(),TOSS_PRIV.value())(...a);
+exports.tossLogin=api((_,b)=>tossLogin(db,tpost,uid=>admin.auth().createCustomToken(uid),{code:b.code}),[TOSS_CERT,TOSS_PRIV],false);
+exports.tossGrant=api((uid,b)=>tossGrant(db,tpost,uid,{orderId:String(b.orderId)}),[TOSS_CERT,TOSS_PRIV]);
 exports._t={quiet,dayKey};

@@ -289,6 +289,7 @@ Object.assign(L.en,{gemAsk:(n,left)=>`Spend ${n} diamonds on this? Diamonds left
 Object.assign(L.ja,{gemAsk:(n,left)=>`ダイヤ${n}個を使って購入しますか?購入後の残りダイヤ:${left}個`,payNA:'このバージョンではダイヤの決済はまだ開いていません。Google Playのアプリでチャージできます'});
 Object.assign(L.zh,{gemAsk:(n,left)=>`要花费${n}颗钻石购买吗?购买后剩余钻石:${left}颗`,payNA:'此版本暂未开放钻石支付。可以在Google Play应用中充值'});
 Object.assign(L.es,{gemAsk:(n,left)=>`¿Gastar ${n} diamantes en esto? Diamantes restantes: ${left}`,payNA:'El pago de diamantes aún no está abierto en esta versión. Puedes recargar en la app de Google Play'});
+Object.assign(L.ko,{tossNA:'다이아 결제를 준비 중이에요. 조금만 기다려 주세요',srcToss:'토스 앱 결제'});Object.assign(L.en,{tossNA:'Diamond payment is being prepared. Please wait a little',srcToss:'Toss app payment'});Object.assign(L.ja,{tossNA:'ダイヤの決済は準備中です。もうしばらくお待ちください',srcToss:'トスアプリ決済'});Object.assign(L.zh,{tossNA:'钻石支付正在准备中,请稍等',srcToss:'Toss应用支付'});Object.assign(L.es,{tossNA:'El pago de diamantes está en preparación. Espera un poco',srcToss:'Pago en la app de Toss'});
 Object.assign(L.ko,{payGo:'결제하기'});Object.assign(L.en,{payGo:'Pay'});Object.assign(L.ja,{payGo:'決済する'});Object.assign(L.zh,{payGo:'支付'});Object.assign(L.es,{payGo:'Pagar'});
 
 // ---------- wallet: history, offline, paid-but-not-delivered ----------

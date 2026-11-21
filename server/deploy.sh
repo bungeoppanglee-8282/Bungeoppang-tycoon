@@ -79,11 +79,12 @@ async function toss(body){
   if(!r.ok)throw Object.assign(new Error(j.message||'toss error'),{status:502});
   return j;
 }
-const api=(fn,secrets=[])=>onRequest({region:'asia-northeast3',cors:true,secrets},async(req,res)=>{
+// auth=false is for the one function that signs a player in (tossLogin)
+const api=(fn,secrets=[],auth=true)=>onRequest({region:'asia-northeast3',cors:true,secrets},async(req,res)=>{
   try{
     if(req.method!=='POST')return res.status(405).end();
-    const m=/^Bearer (.+)$/.exec(req.get('Authorization')||'');if(!m)return res.status(401).json({error:'sign in first'});
-    const uid=(await admin.auth().verifyIdToken(m[1])).uid;
+    let uid=null;
+    if(auth){const m=/^Bearer (.+)$/.exec(req.get('Authorization')||'');if(!m)return res.status(401).json({error:'sign in first'});uid=(await admin.auth().verifyIdToken(m[1])).uid}
     res.json(await fn(uid,req.body||{}));
   }catch(e){if(!e.status)console.error(e);res.status(e.status||500).json({error:e.status?e.message:'server error'})}
 });
@@ -103,6 +104,15 @@ exports.walletGet=api(uid=>wallet.balance(db,uid));
 exports.walletSpend=api((uid,b)=>wallet.spend(db,uid,{reqId:String(b.reqId),itemId:String(b.itemId)}));
 exports.walletPlay=api((uid,b)=>wallet.playCredit(db,verifyPlay,uid,{productId:String(b.productId),token:b.token}));
 exports.walletLog=api(uid=>wallet.history(db,uid));
+
+// ---- Toss app (Apps in Toss) in-app purchase and sign-in (tossiap.js). Secrets (Apps in Toss console > mTLS certificate), set with:
+//   firebase functions:secrets:set TOSS_MTLS_CERT --data-file=<file>_public.crt   and   ... TOSS_MTLS_KEY --data-file=<file>_private.key
+// Signing in mints a Firebase custom token: the function's service account needs the role "Service Account Token Creator" (see app/STORE.md 3-4).
+const {mtlsPost,tossLogin,tossGrant}=require('./tossiap');
+const TOSS_CERT=defineSecret('TOSS_MTLS_CERT'),TOSS_PRIV=defineSecret('TOSS_MTLS_KEY');
+const tpost=(...a)=>mtlsPost(TOSS_CERT.value(),TOSS_PRIV.value())(...a);
+exports.tossLogin=api((_,b)=>tossLogin(db,tpost,uid=>admin.auth().createCustomToken(uid),{code:b.code}),[TOSS_CERT,TOSS_PRIV],false);
+exports.tossGrant=api((uid,b)=>tossGrant(db,tpost,uid,{orderId:String(b.orderId)}),[TOSS_CERT,TOSS_PRIV]);
 exports._t={quiet,dayKey};
 EOF4
 cat > functions/catalog.js <<"EOF5"
@@ -110,7 +120,11 @@ cat > functions/catalog.js <<"EOF5"
 // Keep equal to web/js/data.js (GEM_PACKS, GEM_COST, PERKS): tests/pay.test.js checks it.
 const PACKS={gem50:[50,4900],gem100:[100,8900],gem200:[200,17500],gem300:[300,24500]};   // pack id -> [diamonds, won]
 const COSTS={minibag:20,attpack:50,bake:40,ice:30,noads:50,pat2:40,rack2:30};            // item id -> diamonds
-module.exports={PACKS,COSTS};
+// Toss app (Apps in Toss): the product id (sku) each pack gets in the Apps in Toss console. '' = not registered yet.
+// Keep equal to TOSS_SKU in web/js/tossiap.js (tests/toss.test.js checks it). If the console lets you choose the id and you use gem50 ... gem300, leave these empty.
+const TOSS_SKU={gem50:'',gem100:'',gem200:'',gem300:''};
+const packOfSku=sku=>Object.keys(TOSS_SKU).find(k=>TOSS_SKU[k]&&TOSS_SKU[k]===sku)||(PACKS[sku]&&!TOSS_SKU[sku]?sku:null);
+module.exports={PACKS,COSTS,TOSS_SKU,packOfSku};
 EOF5
 cat > functions/wallet.js <<"EOF6"
 // Diamond wallet on Firebase: wallets/{uid} holds the balance, wallets/{uid}/ledger/{entry} every purchase and spend.
@@ -201,5 +215,63 @@ async function confirmOrder(db,toss,uid,{paymentKey,orderId,amount}){
 }
 module.exports={makeOrder,confirmOrder};
 EOF7
+cat > functions/tossiap.js <<"EOF8"
+// Toss app (Apps in Toss) in-app purchase + sign-in. Server side of web/js/tossiap.js.
+// Talks to the Apps in Toss partner API over mTLS (certificate + private key from the console, kept as Firebase secrets, never in the repo).
+//  - tossLogin: the app hands over a one-time code, Toss answers with the player's anonymous key (same for the same player, also after a reinstall or a new phone),
+//    and the Firebase account id is derived from it: so the diamond wallet follows the Toss account, not the phone.
+//  - tossGrant: the app says "order X was paid"; we ask Toss ourselves (order status API) and credit the wallet once per order.
+const crypto=require('crypto'),https=require('https');
+const {PACKS,packOfSku}=require('./catalog');
+const {credit}=require('./wallet');
+const fail=(status,message)=>Object.assign(new Error(message),{status});
+const HOST='apps-in-toss-api.toss.im',API='/api-partner/v1/apps-in-toss';
+
+// the real caller: post(path, body, headers) -> Toss' answer as JSON. Tests pass a fake with the same shape.
+const mtlsPost=(cert,key)=>(path,body,headers={})=>new Promise((ok,no)=>{
+  const data=JSON.stringify(body);
+  const rq=https.request({host:HOST,path,method:'POST',cert,key,timeout:10000,headers:{'Content-Type':'application/json','Content-Length':Buffer.byteLength(data),...headers}},res=>{
+    let b='';res.on('data',c=>b+=c);res.on('end',()=>{try{ok(JSON.parse(b))}catch(e){no(fail(502,'Toss answered with something unreadable'))}})});
+  rq.on('timeout',()=>rq.destroy(fail(502,'Toss did not answer in time')));
+  rq.on('error',e=>no(e.status?e:fail(502,'could not reach Toss')));
+  rq.end(data);
+});
+
+const uidOf=anonKey=>'toss_'+crypto.createHash('sha256').update(anonKey).digest('hex').slice(0,40);
+
+// mint(uid) -> Firebase custom token (admin.auth().createCustomToken)
+async function tossLogin(db,post,mint,{code}){
+  if(typeof code!=='string'||code.length<4||code.length>500)throw fail(400,'bad code');
+  const r=await post(API+'/users/anon-key/exchange',{code});
+  const key=r&&r.resultType==='SUCCESS'&&r.success&&r.success.anonKey;
+  if(!key||typeof key!=='string')throw fail(401,'Toss did not accept this sign-in code');   // used twice, expired (5 min) or not from this mini-app
+  const uid=uidOf(key);
+  await db.doc('tossUsers/'+uid).set({anonKey:key,at:Date.now()});                          // server-only: lets us ask Toss "is this player the buyer of that order?"
+  return {token:await mint(uid),uid};
+}
+
+// Statuses of the order status API: PURCHASED (paid + delivery accepted) and PAYMENT_COMPLETED (paid, delivery not confirmed yet) both mean the money is taken.
+const PAID=new Set(['PURCHASED','PAYMENT_COMPLETED']);
+async function tossGrant(db,post,uid,{orderId}){
+  if(typeof orderId!=='string'||!/^[A-Za-z0-9_-]{8,64}$/.test(orderId))throw fail(400,'bad order id');
+  const id='tossiap_'+orderId;
+  const seen=await db.doc(`wallets/${uid}/ledger/${id}`).get();
+  if(seen.exists){const d=seen.data();return {gems:d.delta,balance:d.balanceAfter,already:true}}        // already counted: Toss is not asked again
+  const u=await db.doc('tossUsers/'+uid).get();if(!u.exists)throw fail(403,'sign in with Toss first');
+  const r=await post(API+'/order/get-order-status',{orderId},{'x-anon-key':u.data().anonKey});
+  if(!r||r.resultType!=='SUCCESS'||!r.success)throw fail(502,'Toss could not check this order');
+  const s=r.success;
+  if(s.status==='ORDER_IN_PROGRESS')throw fail(409,'order still in progress');                      // the app retries
+  if(s.status==='NOT_FOUND')throw fail(404,'no such order');
+  if(s.status==='MINIAPP_MISMATCH')throw fail(403,'order of another app');
+  if(s.status==='ERROR')throw fail(502,'Toss could not check this order');
+  if(!PAID.has(s.status))throw fail(402,'order is not paid ('+s.status+')');                        // FAILED, REFUNDED ...
+  if(s.purchaserMatched!==true)throw fail(403,'this order belongs to another player');
+  const pack=packOfSku(s.sku);if(!pack)throw fail(400,'unknown product');                           // the sku comes from Toss, never from the app
+  const c=await credit(db,uid,{id,delta:PACKS[pack][0],source:'tossapp',ref:orderId,item:pack,claim:'purchases/'+id});
+  return {gems:PACKS[pack][0],balance:c.balance,already:!!c.already};
+}
+module.exports={mtlsPost,tossLogin,tossGrant,uidOf};
+EOF8
 (cd functions && npm install --silent)
 firebase deploy --only functions --project my-bungeoppang-tycoon

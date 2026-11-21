@@ -1,7 +1,7 @@
 // ---------- background music: one seamless loop (tail crossfaded into head offline), played with Web Audio so the loop has no gap ----------
 // own AudioContext: fx.js creates its context lazily and owns OUT/AC. Starts on the first tap (browsers block autoplay).
 const BGM={ctx:null,gain:null,src:null,buf:null,loading:false,MAX:.7};
-function bgmOn(){return P.bgm!==false&&(P.bgmVol??40)>0&&!document.hidden}
+function bgmOn(){return !BGM.hold&&P.bgm!==false&&(P.bgmVol??40)>0&&!document.hidden}
 function bgmApply(){
   try{
     if(!BGM.ctx){BGM.ctx=new (window.AudioContext||window.webkitAudioContext)();BGM.gain=BGM.ctx.createGain();BGM.gain.connect(BGM.ctx.destination)}

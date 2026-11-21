@@ -23,6 +23,7 @@ async function iapDeliver(p){
 }
 // at start and on return to the app: refresh the balance, finish an interrupted spend, load Play prices, deliver anything paid but not yet delivered
 async function iapInit(){
+  if(BUILD==='toss')await tossRecover();
   await walletSync();await spendFinish();
   const B=BL();if(!B||BUILD==='toss')return;
   try{const r=await B.setup({ids:IAP_IDS});IAP.price=r.prices||{};for(const p of r.owned||[])await iapDeliver(p)}catch(e){}
@@ -58,13 +59,14 @@ async function gemLog(){
   if(iapMock()||!S.walletOn)return openSheet(`<div class="pause"><div class="ribbon">📜</div><p class="sub">${t('gemLogNone')}</p><button class="gbtn wide" data-act="iapno">${t('ok')}</button></div>`);
   try{
     const r=await srvPost('walletLog',{});
-    const src={play:t('srcPlay'),toss:t('srcWeb'),game:''},name=e=>e.type==='buy'?t('gemPack',(GEM_PACKS[e.item]||[0])[0]):(shopItems().find(i=>i.id===e.item)||{name:e.item}).name;
+    const src={play:t('srcPlay'),toss:t('srcWeb'),tossapp:t('srcToss'),game:''},name=e=>e.type==='buy'?t('gemPack',(GEM_PACKS[e.item]||[0])[0]):(shopItems().find(i=>i.id===e.item)||{name:e.item}).name;
     openSheet(`<div class="pause gemlog"><div class="ribbon">${t('gemLogT')}</div><div class="logrows">${r.entries.map(e=>`<div class="logrow"><small>${new Date(e.at).toLocaleString()}</small><span>${name(e)} ${src[e.source]?'· '+src[e.source]:''}</span><b class="${e.delta>0?'plus':'minus'}">${e.delta>0?'+':''}${e.delta}💎</b></div>`).join('')||t('gemLogNone')}</div><button class="gbtn wide" data-act="iapno">${t('ok')}</button></div>`);
   }catch(e){toast(t('netErr'))}
 }
 async function iapBuy(id){
-  if(!BL())return webPay(id);   // no Play here: the web build pays through Toss Payments (webpay.js); the Toss build says it is not open yet
+  if(!BL())return BUILD==='toss'?tossBuy(id):webPay(id);   // no Play here: the web build pays through Toss Payments (webpay.js), the Toss app build through Toss in-app purchase (tossiap.js)
   try{const p=await BL().buy({id});if(await iapDeliver(p))FX.on('buy');else toast(t('payLater'));shopSheet()}
   catch(e){if(e.code==='owned')iapInit().then(shopSheet);else if(e.code!=='cancel')toast(t(e.code==='pending'?'iapPending':'iapFail'))}
 }
-iapInit();
+// after every script is loaded (the Toss build's tossRecover lives in a later file)
+document.readyState==='loading'?document.addEventListener('DOMContentLoaded',iapInit):iapInit();

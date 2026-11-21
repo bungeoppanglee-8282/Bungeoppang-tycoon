@@ -10,10 +10,10 @@ const fbAuth=()=>fbP||(fbP=fbAuth0().finally(()=>fbP=null));   // concurrent cal
 async function fbAuth0(){
   if(fbTok&&Date.now()<fbExp)return fbTok;
   let d;const a=P.fb;
-  if(a&&a.refresh)try{const x=await fbPost(`https://securetoken.googleapis.com/v1/token?key=${FB.key}`,{grant_type:'refresh_token',refresh_token:a.refresh});
+  if(a&&a.refresh&&(BUILD!=='toss'||a.toss))try{const x=await fbPost(`https://securetoken.googleapis.com/v1/token?key=${FB.key}`,{grant_type:'refresh_token',refresh_token:a.refresh});
     d={idToken:x.id_token,refreshToken:x.refresh_token,localId:x.user_id,expiresIn:x.expires_in}}catch(e){}
-  if(!d)d=await fbPost(`https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${FB.key}`,{returnSecureToken:true});
-  P.fb={uid:d.localId,refresh:d.refreshToken};savePref();
+  if(!d)d=BUILD==='toss'?await tossAuth():await fbPost(`https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${FB.key}`,{returnSecureToken:true});   // Toss build: always the Toss account (tossiap.js), never an anonymous one
+  P.fb={uid:d.localId,refresh:d.refreshToken,...(BUILD==='toss'?{toss:1}:{})};savePref();
   fbExp=Date.now()+(+d.expiresIn-120)*1000;return fbTok=d.idToken;
 }
 // upload my score (only if the player joined the ranking), then fetch both charts and my place
