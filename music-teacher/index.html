@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>뮤직티처</title>
+<meta name="description" content="유튜브·내 파일을 보며 건반·악보·기타·플루트로 연습하고 녹음을 비교하는 연습 앱">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Righteous&family=Noto+Sans+KR:wght@400;700&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <h1 class="brand"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg><span data-i18n="brand">뮤직티처</span></h1>
+  <form id="urlForm" class="url">
+    <label for="url" class="sr" data-i18n="urlLabel">유튜브 주소</label>
+    <input id="url" type="url" inputmode="url" data-i18n-ph="urlPh" placeholder="유튜브 주소를 붙여 넣으세요" autocomplete="off">
+    <button class="btn primary" data-i18n="load">불러오기</button>
+  </form>
+  <div class="top-actions">
+    <label class="btn"><input id="mediaFile" type="file" accept="video/*,audio/*" hidden><span data-i18n="openMedia">내 영상·오디오</span></label>
+    <label class="btn"><input id="midiFile" type="file" accept=".mid,.midi,audio/midi" hidden><span data-i18n="openMidi">MIDI 연결</span></label>
+    <label for="lang" class="sr">Language</label>
+    <select id="lang" class="btn">
+      <option value="ko">한국어</option><option value="en">English</option><option value="zh">中文</option><option value="ja">日本語</option>
+    </select>
+  </div>
+</header>
+
+<p id="toast" class="toast" role="status" aria-live="polite"></p>
+
+<main class="bento">
+  <!-- 1. Player: most important -->
+  <section class="tile t-player" aria-labelledby="hPlayer">
+    <h2 id="hPlayer" class="sr" data-i18n="player">플레이어</h2>
+    <div class="screen">
+      <div id="yt"></div>
+      <video id="video" playsinline hidden></video>
+      <p id="empty" class="empty" data-i18n="emptyPlayer">유튜브 주소를 넣거나 내 파일을 열어 주세요.</p>
+    </div>
+    <div class="transport">
+      <button id="back" class="icon" data-i18n-aria="back5" aria-label="5초 뒤로"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 17l-5-5 5-5M18 17l-5-5 5-5"/></svg></button>
+      <button id="play" class="icon big primary" data-i18n-aria="playPause" aria-label="재생/정지"><svg viewBox="0 0 24 24" aria-hidden="true"><path id="playIcon" d="M7 4l13 8-13 8z"/></svg></button>
+      <button id="fwd" class="icon" data-i18n-aria="fwd5" aria-label="5초 앞으로"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 17l5-5-5-5M6 17l5-5-5-5"/></svg></button>
+      <span id="clock" class="clock">0:00 / 0:00</span>
+      <button id="tabAudio" class="btn" data-i18n="tabAudio">탭 소리 연결</button>
+      <button id="resume" class="btn accent" hidden data-i18n="resume">지난 연습 이어하기</button>
+    </div>
+  </section>
+
+  <!-- 2. Score -->
+  <section class="tile t-staff" aria-labelledby="hStaff">
+    <div class="tile-head">
+      <h2 id="hStaff" data-i18n="staff">악보</h2>
+      <button id="selectMode" class="btn sm" aria-pressed="false" data-i18n="selectSection">구간 선택</button>
+    </div>
+    <svg id="staff" class="staff" viewBox="0 25 600 200" role="img" data-i18n-aria="staffAria" aria-label="현재 재생 위치의 오선지"></svg>
+    <p class="hint" id="staffHint" data-i18n="staffHint">음표를 누르면 그 위치로 이동합니다. MIDI를 연결하면 정확한 음표가 표시됩니다.</p>
+  </section>
+
+  <!-- 3. Keyboard -->
+  <section class="tile t-keys" aria-labelledby="hKeys">
+    <div class="tile-head"><h2 id="hKeys" data-i18n="keys">건반</h2><span id="nowNotes" class="mono" aria-live="off">—</span></div>
+    <div class="keys-scroll"><div id="keys" class="keys"></div></div>
+  </section>
+
+  <!-- 4. Teacher -->
+  <section class="tile t-teacher" aria-labelledby="hTeacher">
+    <div class="tile-head"><h2 id="hTeacher" data-i18n="teacher">티처 비교</h2><span id="score" class="score">—</span></div>
+    <div class="row">
+      <button id="recBtn" class="btn primary" data-i18n="recStart">녹음 시작</button>
+      <button id="recSave" class="btn" disabled data-i18n="recSave">녹음 저장</button>
+      <button id="analyze" class="btn" disabled data-i18n="analyze">비교하기</button>
+    </div>
+    <audio id="recAudio" controls hidden></audio>
+    <label class="btn file"><input id="upRec" type="file" accept="audio/*,video/*" hidden><span data-i18n="analyzeUpload">녹음 파일 올려 비교</span></label>
+    <ol id="issues" class="issues"></ol>
+    <div class="row">
+      <button id="readBtn" class="btn sm" disabled data-i18n="read">결과 읽기</button>
+      <button id="stopRead" class="btn sm" data-i18n="stopRead">안내 정지</button>
+    </div>
+  </section>
+
+  <!-- 5. Practice controls -->
+  <section class="tile t-ctrl" aria-labelledby="hCtrl">
+    <h2 id="hCtrl" data-i18n="practice">연습 설정</h2>
+    <div class="field">
+      <label for="speed"><span data-i18n="speed">속도</span> <output id="speedOut">1.0×</output></label>
+      <div class="row nowrap">
+        <button id="slower" class="icon sm" aria-label="-0.1">−</button>
+        <input id="speed" type="range" min="0.1" max="2" step="0.1" value="1">
+        <button id="faster" class="icon sm" aria-label="+0.1">+</button>
+      </div>
+    </div>
+    <div class="field">
+      <span class="lbl" data-i18n="loop">구간 반복</span>
+      <div class="row nowrap">
+        <button id="setA" class="btn sm">A</button>
+        <button id="setB" class="btn sm">B</button>
+        <output id="loopOut" class="mono">—</output>
+      </div>
+      <div class="row nowrap">
+        <button id="loopToggle" class="btn sm" aria-pressed="false" data-i18n="loopOn">반복 켜기</button>
+        <button id="loopClear" class="btn sm ghost" data-i18n="clear">초기화</button>
+      </div>
+    </div>
+    <div class="field">
+      <label for="sync"><span data-i18n="sync">악보 싱크</span> <output id="syncOut">0.0s</output></label>
+      <input id="sync" type="range" min="-10" max="10" step="0.1" value="0">
+    </div>
+  </section>
+
+  <!-- 6. Instruments -->
+  <section class="tile t-inst" aria-labelledby="hInst">
+    <h2 id="hInst" class="sr" data-i18n="instrument">악기</h2>
+    <div class="tabs" role="tablist">
+      <button role="tab" class="tab" aria-selected="true" data-inst="piano" data-i18n="piano">피아노</button>
+      <button role="tab" class="tab" aria-selected="false" data-inst="guitar" data-i18n="guitar">기타</button>
+      <button role="tab" class="tab" aria-selected="false" data-inst="flute" data-i18n="flute">플루트</button>
+    </div>
+    <div id="pane-piano" class="pane"><p class="hint" data-i18n="pianoHint">아래 건반을 누르면 소리를 확인할 수 있습니다.</p></div>
+    <div id="pane-guitar" class="pane" hidden>
+      <div class="row nowrap"><label for="chord" data-i18n="chord">코드</label><select id="chord" class="btn sm"></select><span id="chordAuto" class="hint"></span></div>
+      <svg id="fret" class="diagram" viewBox="0 0 140 150" role="img" aria-label="chord diagram"></svg>
+      <span class="lbl" data-i18n="strum">스트로크</span>
+      <div id="strum" class="strum"></div>
+      <button id="strumPlay" class="btn sm" data-i18n="strumPlay">패턴 재생</button>
+    </div>
+    <div id="pane-flute" class="pane" hidden>
+      <div class="row nowrap"><label for="fluteNote" data-i18n="note">음</label><select id="fluteNote" class="btn sm"></select></div>
+      <svg id="flute" class="diagram wide" viewBox="0 0 320 90" role="img" aria-label="flute fingering"></svg>
+      <p class="hint" data-i18n="fluteHint">기본 보엠식 운지(C4–C6). 대체 운지는 표시하지 않습니다.</p>
+    </div>
+  </section>
+
+  <!-- 7. Metronome -->
+  <section class="tile t-metro" aria-labelledby="hMetro">
+    <div class="tile-head"><h2 id="hMetro" data-i18n="metronome">메트로놈</h2><output id="bpmOut" class="big-num">90</output></div>
+    <label for="bpm" class="sr">BPM</label>
+    <input id="bpm" type="range" min="30" max="240" value="90">
+    <div class="row nowrap">
+      <label for="beats" class="sr" data-i18n="beats">박자</label>
+      <select id="beats" class="btn sm"><option>2</option><option>3</option><option selected>4</option><option>6</option></select>
+      <button id="metroBtn" class="btn sm primary" data-i18n="start">시작</button>
+    </div>
+    <div id="beatDots" class="dots" aria-hidden="true"></div>
+  </section>
+
+  <!-- 8. Mix -->
+  <section class="tile t-mix" aria-labelledby="hMix">
+    <h2 id="hMix" data-i18n="mix">녹음 합쳐 듣기</h2>
+    <div class="row">
+      <label class="btn sm"><input id="mixFiles" type="file" accept="audio/*" multiple hidden><span data-i18n="addFiles">파일 추가</span></label>
+      <button id="mixAddRec" class="btn sm" disabled data-i18n="addRec">방금 녹음 추가</button>
+    </div>
+    <ul id="mixList" class="mix-list"></ul>
+    <div class="row">
+      <button id="mixTogether" class="btn sm" data-i18n="together">겹쳐 듣기</button>
+      <button id="mixSeq" class="btn sm" data-i18n="sequence">이어 듣기</button>
+      <button id="mixStop" class="btn sm ghost" data-i18n="stop">정지</button>
+      <button id="mixExport" class="btn sm accent" data-i18n="exportWav">WAV 저장</button>
+    </div>
+  </section>
+
+  <!-- 9. Voice + speaker -->
+  <section class="tile t-voice" aria-labelledby="hVoice">
+    <div class="tile-head"><h2 id="hVoice" data-i18n="voice">음성 명령</h2>
+      <button id="voiceBtn" class="btn sm" aria-pressed="false" data-i18n="voiceOn">켜기</button></div>
+    <p id="heard" class="mono heard" aria-live="polite">—</p>
+    <p class="hint" data-i18n="voiceHint">“선생님 재생”, “선생님 속도 0.5”, “선생님 녹음 시작”, “선생님 메트로놈 켜”</p>
+    <p class="hint warn" data-i18n="voicePrivacy">음성 명령은 브라우저의 음성 인식 서비스로 전송될 수 있습니다.</p>
+    <button id="speakerBtn" class="btn sm" data-i18n="speaker">스피커 선택</button>
+    <span id="speakerOut" class="hint"></span>
+  </section>
+</main>
+
+<footer class="foot"><span data-i18n="footer">음 인식은 추정입니다. 정확한 기준은 같은 곡의 MIDI를 연결하세요.</span> · <span data-i18n="sfx">효과음: earshot</span></footer>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
