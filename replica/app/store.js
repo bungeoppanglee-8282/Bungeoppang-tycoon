@@ -39,4 +39,18 @@ function dashboard(tasks, today) {
   }
   return rows;
 }
-if (typeof module !== 'undefined') module.exports = { STATUSES, load, save, parseImport, dashboard, addDays, KEY };
+const diffDays = (a, b) => Math.round((Date.parse(b) - Date.parse(a)) / 864e5);
+// 간트 범위: 날짜 있는 업무의 최소 시작~최대 마감 (+앞뒤 여유 1일)
+function ganttRange(tasks) {
+  const ds = tasks.flatMap(t => [t.start, t.due]).filter(Boolean).sort();
+  if (!ds.length) return null;
+  const from = addDays(ds[0], -1), to = addDays(ds[ds.length - 1], 1);
+  return { from, to, days: diffDays(from, to) + 1 };
+}
+// 월 달력 칸: 일요일 시작, 앞쪽 빈칸은 ''
+function monthCells(ym) {
+  const first = ym + '-01', pad = new Date(first + 'T00:00:00Z').getUTCDay();
+  const n = new Date(Date.UTC(+ym.slice(0, 4), +ym.slice(5), 0)).getUTCDate(); // 다음 달 0일 = 이번 달 말일
+  return [...Array(pad).fill(''), ...Array.from({ length: n }, (_, i) => addDays(first, i))];
+}
+if (typeof module !== 'undefined') module.exports = { STATUSES, load, save, parseImport, dashboard, addDays, diffDays, ganttRange, monthCells, KEY };

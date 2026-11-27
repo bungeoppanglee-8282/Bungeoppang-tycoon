@@ -21,12 +21,22 @@ form{display:flex;flex-wrap:wrap;gap:8px;align-items:end}label{display:flex;flex
 input,select,textarea,button{font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--fg)}
 textarea{width:100%;min-height:70px}button{cursor:pointer}button.primary{background:var(--acc);color:#fff;border-color:var(--acc)}
 button.danger{color:#dc2626}:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.tabs{display:flex;gap:4px;margin:8px 0 12px}.tabs a{padding:6px 12px;border-radius:6px;color:var(--fg);text-decoration:none;border:1px solid var(--line);background:var(--card)}
+.tabs a[aria-current]{background:var(--acc);color:#fff;border-color:var(--acc)}
+.gantt{overflow-x:auto}.grow{display:grid;grid-template-columns:150px 1fr;align-items:center;border-bottom:1px solid var(--line);min-height:34px}
+.gname{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:8px}.gname a{color:inherit}
+.gtrack{position:relative;height:34px}.gbar{position:absolute;top:8px;height:18px;border-radius:4px;opacity:.9}
+.gtoday{position:absolute;top:0;bottom:0;width:2px;background:#dc2626}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}.cal div{min-height:76px;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:4px;font-size:12px;overflow:hidden}
+.cal .h{min-height:0;border:0;background:none;text-align:center;color:var(--mute)}.cal .now{outline:2px solid var(--acc)}
+.cal a{display:block;color:#fff;border-radius:3px;padding:0 4px;margin-top:2px;text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 </style></head><body>
 <header><nav id="nav" aria-label="메뉴"></nav>
   <label>나<select id="me" aria-label="현재 사용자"></select></label>
   <button id="exp">백업 내보내기</button><label for="imp" class="mute" style="cursor:pointer">가져오기<input id="imp" type="file" accept=".json,application/json" hidden></label>
 </header>
 <main id="app"></main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="store.js"></script>
 <script>
 let db = load(localStorage);
@@ -38,7 +48,65 @@ const chip = id => `<span class="chip" style="background:${st(id).color}">${st(i
 const people = () => [...new Set(db.projects.flatMap(p => p.members))];
 function commit() {
   try { save(localStorage, db); } catch (e) { alert('저장 실패(저장 공간 부족 등): ' + e.message); }
+  render(); push();
+}
+// ── 팀 공유(Supabase). 설정이 없으면 기기 내 저장만 사용 ──
+const CLOUD = 'flowlite.cloud';
+let cloud = (() => { try { return JSON.parse(localStorage.getItem(CLOUD)) || {}; } catch { return {}; } })();
+let sb = null, user = null, ver = 0, queue = Promise.resolve(), workspaces = [], invites = [];
+const saveCloud = () => localStorage.setItem(CLOUD, JSON.stringify(cloud));
+function push() {
+  if (!sb || !user || !cloud.ws) return;
+  const data = db;
+  queue = queue.then(async () => { // 순서대로 1개씩: version 경합 방지
+    const { data: rows, error } = await sb.from('workspaces').update({ data, version: ver + 1 }).eq('id', cloud.ws).eq('version', ver).select('version');
+    if (error || !rows.length) { alert('다른 팀원이 먼저 수정했습니다. 최신 내용으로 새로고침합니다. 방금 변경은 다시 입력해 주세요.'); return pull(); }
+    ver = rows[0].version;
+  });
+}
+async function pull() {
+  const { data, error } = await sb.from('workspaces').select('data, version').eq('id', cloud.ws).single();
+  if (error) return alert('불러오기 실패: ' + error.message);
+  if (valid(data.data)) { db = { ...data.data, me: db.me }; ver = data.version; save(localStorage, db); render(); }
+}
+async function refreshCloud() {
+  if (!sb || !user) return render();
+  ({ data: workspaces = [] } = await sb.from('workspaces').select('id, name, owner_id'));
+  ({ data: invites = [] } = cloud.ws ? await sb.from('workspace_invites').select('email').eq('workspace_id', cloud.ws) : { data: [] });
   render();
+}
+async function useWorkspace(id) {
+  const { error } = await sb.from('workspace_members').insert({ workspace_id: id, user_id: user.id });
+  if (error && error.code !== '23505') return alert('참여 실패: ' + error.message); // 23505 = 이미 멤버
+  cloud.ws = id; saveCloud(); await pull(); subscribe(); refreshCloud();
+}
+function subscribe() {
+  sb.removeAllChannels();
+  sb.channel('ws').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'workspaces', filter: 'id=eq.' + cloud.ws },
+    ({ new: w }) => { if (w.version > ver && valid(w.data)) { db = { ...w.data, me: db.me }; ver = w.version; save(localStorage, db); render(); } }).subscribe();
+}
+async function initCloud() {
+  if (!cloud.url || !cloud.key || !window.supabase) return;
+  try { sb = supabase.createClient(cloud.url, cloud.key); } catch (e) { return alert('Supabase 설정 오류: ' + e.message); }
+  sb.auth.onAuthStateChange((_, session) => { const was = user?.id; user = session?.user || null; if (user?.id !== was) start(); });
+}
+async function start() {
+  if (user && cloud.ws) { await pull(); subscribe(); }
+  refreshCloud();
+}
+function viewCloud() {
+  if (!cloud.url) return `<div class="card"><h2>팀 공유 (Supabase)</h2><p class="mute">Supabase 프로젝트 설정 → API의 URL과 publishable(anon) 키를 넣으세요. secret/service_role 키는 넣지 마세요.</p>
+    <form id="cloudcfg"><label style="flex:1">Project URL<input name="url" type="url" required placeholder="https://xxxx.supabase.co"></label>
+    <label style="flex:1">Publishable 키<input name="key" required></label><button class="primary">연결</button></form></div>`;
+  if (!user) return `<div class="card"><h2>팀 공유 로그인</h2><form id="login"><label style="flex:1">이메일<input name="email" type="email" required></label>
+    <button class="primary">로그인 링크 받기</button><button type="button" id="cloudoff">연결 해제</button></form></div>`;
+  const cur = workspaces.find(w => w.id === cloud.ws);
+  return `<div class="card"><h2>팀 공유</h2><p>${esc(user.email)} · ${cur ? `<b>${esc(cur.name)}</b> 동기화 중` : '워크스페이스를 선택하세요'}</p>
+    ${workspaces.map(w => `<button data-ws="${w.id}" ${w.id === cloud.ws ? 'disabled' : ''}>${esc(w.name)}${w.owner_id === user.id ? '' : ' (초대됨)'}</button>`).join(' ')}
+    <form id="newws" style="margin-top:8px"><label>새 워크스페이스(현재 데이터로 시작)<input name="name" required maxlength="100"></label><button>만들기</button></form>
+    ${cur ? `<form id="invite" style="margin-top:8px"><label style="flex:1">팀원 초대(이메일)<input name="email" type="email" required></label><button>초대</button></form>
+      <p class="mute">초대됨: ${invites.map(i => esc(i.email)).join(', ') || '없음'}</p>` : ''}
+    <p><button type="button" id="logout">로그아웃</button></p></div>`;
 }
 function taskLine(t) {
   const late = t.status !== 'done' && t.due && t.due < today();
@@ -57,11 +125,39 @@ function viewDashboard() {
     <div class="kanban">${STATUSES.map(s => `<div class="col"><b>${s.name}</b> <span class="mute">${tasks.filter(t => t.status === s.id).length}</span>
       ${tasks.filter(t => t.status === s.id).map(taskLine).join('')}</div>`).join('')}</div>
     <div class="card"><h2>새 프로젝트</h2><form id="newp"><label>이름<input name="name" required maxlength="100"></label>
-      <label>멤버(쉼표 구분)<input name="members" placeholder="민수, 지영, 현우" required></label><button class="primary">만들기</button></form></div>`;
+      <label>멤버(쉼표 구분)<input name="members" placeholder="민수, 지영, 현우" required></label><button class="primary">만들기</button></form></div>` + viewCloud();
+}
+function tabs(p, sub) {
+  return `<h1>${esc(p.name)}</h1><nav class="tabs" aria-label="보기">${[['', '피드'], ['gantt', '간트'], ['cal', '캘린더']]
+    .map(([k, l]) => `<a href="#/p/${p.id}${k ? '/' + k : ''}" ${(sub || '') === k ? 'aria-current="page"' : ''}>${l}</a>`).join('')}</nav>`;
+}
+function viewGantt(p) {
+  const ts = db.tasks.filter(t => t.projectId === p.id && t.kind !== 'post' && (t.start || t.due));
+  const r = ganttRange(ts);
+  if (!r) return tabs(p, 'gantt') + '<p class="card mute">시작일이나 마감일이 있는 업무가 없습니다</p>';
+  const pct = d => (diffDays(r.from, d) / r.days * 100).toFixed(2) + '%', w = Math.max(600, r.days * 28);
+  const now = today() >= r.from && today() <= r.to ? `<div class="gtoday" style="left:${pct(today())}" title="오늘"></div>` : '';
+  return tabs(p, 'gantt') + `<div class="card gantt"><div style="min-width:${w}px">
+    <div class="grow mute"><div>${r.from} ~ ${r.to}</div><div></div></div>
+    ${ts.sort((a, b) => (a.start || a.due).localeCompare(b.start || b.due)).map(t => {
+      const s = t.start || t.due, e = t.due || t.start;
+      return `<div class="grow"><div class="gname"><a href="#/t/${t.id}" class="${t.status === 'done' ? 'done' : ''}">${esc(t.title)}</a></div>
+        <div class="gtrack">${now}<div class="gbar" style="left:${pct(s)};width:${((diffDays(s, e) + 1) / r.days * 100).toFixed(2)}%;background:${st(t.status).color}"
+          title="${esc(t.title)} ${s}~${e}"></div></div></div>`;
+    }).join('')}</div></div>`;
+}
+function viewCal(p, ym) {
+  ym = /^\d{4}-\d{2}$/.test(ym || '') ? ym : today().slice(0, 7);
+  const shift = n => { const d = new Date(Date.UTC(+ym.slice(0, 4), +ym.slice(5) - 1 + n, 1)); return d.toISOString().slice(0, 7); };
+  const ts = db.tasks.filter(t => t.projectId === p.id && t.due);
+  return tabs(p, 'cal') + `<div class="card"><p><a href="#/p/${p.id}/cal/${shift(-1)}" aria-label="이전 달">◀</a> <b>${ym}</b> <a href="#/p/${p.id}/cal/${shift(1)}" aria-label="다음 달">▶</a></p>
+    <div class="cal">${'일월화수목금토'.split('').map(d => `<div class="h">${d}</div>`).join('')}
+    ${monthCells(ym).map(d => d ? `<div class="${d === today() ? 'now' : ''}">${+d.slice(8)}${ts.filter(t => t.due === d)
+      .map(t => `<a href="#/t/${t.id}" style="background:${st(t.status).color}">${esc(t.title)}</a>`).join('')}</div>` : '<div class="h"></div>').join('')}</div></div>`;
 }
 function viewProject(p) {
   const opts = p.members.map(m => `<option>${esc(m)}</option>`).join('');
-  return `<h1>${esc(p.name)}</h1>
+  return tabs(p) + `
     <div class="card"><form id="newt"><label>종류<select name="kind"><option value="task">업무</option><option value="todo">할일</option><option value="post">글</option></select></label>
       <label style="flex:1">제목<input name="title" required maxlength="200"></label>
       <label>담당<select name="assignee"><option value="">미지정</option>${opts}</select></label>
@@ -88,18 +184,32 @@ function viewTask(t) {
 }
 
 function render() {
-  const [, kind, id] = location.hash.split('/');
+  const [, kind, id, sub, arg] = location.hash.split('/');
   const p = kind === 'p' && db.projects.find(x => x.id === id), t = kind === 't' && db.tasks.find(x => x.id === id);
   $('#nav').innerHTML = `<a href="#/" ${!p && !t ? 'aria-current="page"' : ''}>대시보드</a>` +
     db.projects.map(x => `<a href="#/p/${x.id}" ${(p || db.projects.find(q => q.id === t?.projectId))?.id === x.id ? 'aria-current="page"' : ''}>${esc(x.name)}</a>`).join('');
   $('#me').innerHTML = ['', ...people()].map(n => `<option ${n === db.me ? 'selected' : ''}>${esc(n)}</option>`).join('');
-  $('#app').innerHTML = t ? viewTask(t) : p ? viewProject(p) : viewDashboard();
+  $('#app').innerHTML = t ? viewTask(t) : p ? (sub === 'gantt' ? viewGantt(p) : sub === 'cal' ? viewCal(p, arg) : viewProject(p)) : viewDashboard();
 }
 const fd = f => Object.fromEntries(new FormData(f));
 const names = s => [...new Set(s.split(',').map(x => x.trim()).filter(Boolean))];
 document.addEventListener('submit', e => {
   e.preventDefault(); const f = fd(e.target), id = location.hash.split('/')[2];
-  if (e.target.id === 'newp') {
+  if (e.target.id === 'cloudcfg') {
+    cloud = { url: f.url.trim(), key: f.key.trim() }; saveCloud(); initCloud(); return render();
+  } else if (e.target.id === 'login') {
+    sb.auth.signInWithOtp({ email: f.email, options: { emailRedirectTo: location.href.split('#')[0] } })
+      .then(({ error }) => alert(error ? '실패: ' + error.message : '메일함의 로그인 링크를 눌러주세요'));
+    return;
+  } else if (e.target.id === 'newws') {
+    sb.from('workspaces').insert({ name: f.name.trim(), owner_id: user.id, data: db }).select('id').single()
+      .then(({ data, error }) => error ? alert('생성 실패: ' + error.message) : useWorkspace(data.id));
+    return;
+  } else if (e.target.id === 'invite') {
+    sb.from('workspace_invites').insert({ workspace_id: cloud.ws, email: f.email.trim().toLowerCase() })
+      .then(({ error }) => error && error.code !== '23505' ? alert('초대 실패: ' + error.message) : refreshCloud());
+    return;
+  } else if (e.target.id === 'newp') {
     const p = { id: crypto.randomUUID(), name: f.name.trim(), members: names(f.members) };
     db.projects.push(p); location.hash = '#/p/' + p.id;
   } else if (e.target.id === 'newt') {
@@ -117,6 +227,9 @@ document.addEventListener('submit', e => {
 });
 document.addEventListener('click', e => {
   const id = location.hash.split('/')[2];
+  if (e.target.dataset.ws) return useWorkspace(e.target.dataset.ws);
+  if (e.target.id === 'logout') { sb.auth.signOut(); cloud.ws = ''; saveCloud(); return; }
+  if (e.target.id === 'cloudoff') { localStorage.removeItem(CLOUD); cloud = {}; sb = null; return render(); }
   if (e.target.id === 'delt' && confirm('이 게시물을 삭제할까요?')) {
     const t = db.tasks.find(t => t.id === id); db.tasks = db.tasks.filter(x => x !== t); location.hash = '#/p/' + t.projectId; commit();
   } else if (e.target.id === 'delp' && confirm('프로젝트와 모든 게시물을 삭제할까요?')) {
@@ -137,5 +250,5 @@ $('#imp').onchange = async e => {
   } catch (err) { alert(err.message); }
 };
 addEventListener('hashchange', render);
-render();
+render(); initCloud();
 </script></body></html>

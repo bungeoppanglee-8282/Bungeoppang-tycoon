@@ -20,3 +20,12 @@ assert.throws(() => parseImport('nope'), /JSON/);
 assert.throws(() => parseImport('{"projects":[]}'), /형식/);
 assert.deepStrictEqual(parseImport(JSON.stringify(d)), d);
 console.log('ALL STORE TESTS PASSED');
+const { ganttRange, monthCells } = require('./store.js');
+assert.deepStrictEqual(ganttRange([{ start: '2026-11-03', due: '2026-11-05' }, { due: '2026-11-10' }, {}]), { from: '2026-11-02', to: '2026-11-11', days: 10 });
+assert.strictEqual(ganttRange([{}]), null);
+const nov = monthCells('2026-11'); // 2026-11-01 = 일요일
+assert.strictEqual(nov[0], '2026-11-01'); assert.strictEqual(nov.length, 30);
+const feb = monthCells('2028-02'); // 윤년, 2028-02-01 = 화요일
+assert.deepStrictEqual(feb.slice(0, 3), ['', '', '2028-02-01']); assert.strictEqual(feb.at(-1), '2028-02-29');
+assert.strictEqual(monthCells('2026-12').at(-1), '2026-12-31');
+console.log('ALL VIEW HELPER TESTS PASSED');

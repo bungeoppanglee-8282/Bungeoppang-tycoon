@@ -1,8 +1,17 @@
-# 3인 스타트업 협업툴 설계 (채팅 제외, 서버 없음)
+# 3인 스타트업 협업툴 (채팅 제외)
 
-> **현재 구현: 기기 내 저장(localStorage).** `app/index.html`을 브라우저로 열면 바로 동작.
-> 팀 공유 = `백업 내보내기` JSON 파일을 주고받아 `가져오기`(덮어쓰기). 아래 Supabase 설계는 실시간 공유가 필요해질 때의 업그레이드 경로(이전 SQL은 git 기록 94b1e7d).
-
+> **구현:** `app/index.html` — 대시보드 · 피드 · 업무 상세 · 간트 · 캘린더.
+> 기본은 기기 내 저장. Supabase를 연결하면 워크스페이스 단위로 실시간 공유됨.
+>
+> **Supabase 연결 (1회)**
+> 1. supabase.com에서 프로젝트 생성 → SQL Editor에 `supabase/schema.sql` 붙여넣고 실행
+> 2. Authentication → URL Configuration → Site URL / Redirect URLs에 앱 주소 등록
+> 3. 앱을 웹에 올림(GitHub Pages·Vercel 등. `file://`로 열면 로그인 링크가 안 돌아옴)
+> 4. 앱 대시보드 하단 "팀 공유"에 Project URL + publishable 키 입력 → 이메일 로그인 → 워크스페이스 만들기 → 팀원 이메일 초대
+> 5. 팀원: 같은 앱 주소에서 같은 URL·키 입력 → 로그인 → "(초대됨)" 워크스페이스 선택
+>
+> 저장 방식: 워크스페이스 1개 = JSON 1개 + version. 동시 수정 시 늦은 쪽은 거부되고 최신본을 다시 받음.
+> 아래 7테이블 설계는 데이터가 커질 때의 전환 경로(SQL은 git 94b1e7d).
 
 ## 스택 (관리형만)
 Next.js(App Router) + Supabase(Postgres·Auth·RLS·Storage) + Vercel. 이메일 알림은 Resend.
